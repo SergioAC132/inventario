@@ -1,0 +1,42 @@
+package com.progastro.inventario.models.Entities;
+
+import java.time.LocalDateTime;
+
+import com.progastro.inventario.models.Enums.DestinoSalida;
+import com.progastro.inventario.models.Enums.TipoSalida;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Table(
+    name = "salidas"
+)
+public class Salida {
+    
+    @Id
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @Column(name = "id_salida")
+    private Long idSalida;
+
+    @Column(nullable= false)
+    private LocalDateTime fecha;
+
+    @Column(nullable = false, length = 15)
+    private TipoSalida tipo;
+
+    @Column(nullable = false, length = 30)
+    private DestinoSalida destino;
+}

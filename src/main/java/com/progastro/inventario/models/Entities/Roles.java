@@ -16,19 +16,16 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "usuarios")
-public class Usuario {
+@Table(
+    name = "compra_productos"
+)
+public class Roles {
     
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idUsuario;
+    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @Column(name = "id_rol")
+    private Long idRol;
 
-    @Column(nullable = false)
-    private String username;
-
-    @Column(nullable=false)    
-    private String password;
-
-    @Column(nullable = false)
-    private int enabled;
+    @Column(nullable= false, length = 50)
+    private String nombre;
 }
