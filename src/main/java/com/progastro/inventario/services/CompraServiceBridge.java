@@ -1,4 +1,4 @@
-package com.progastro.Services;
+package com.progastro.inventario.services;
 
 import com.progastro.inventario.models.DTO.CompraRequestDTO;
 import com.progastro.inventario.models.DTO.CompraResponseDTO;

@@ -15,7 +15,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductoCompraRequestDTO {
+public class CompraProductoRequestDTO {
     
     @NotNull
     private Long productoId;

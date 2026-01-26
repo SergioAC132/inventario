@@ -23,5 +23,5 @@ public class CompraRequestDTO {
     private String numeroFactura;
 
     @NotEmpty
-    private List<ProductoCompraRequestDTO> productos;
+    private List<CompraProductoRequestDTO> productos;
 }

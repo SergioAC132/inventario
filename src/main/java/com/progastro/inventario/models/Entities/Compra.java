@@ -1,8 +1,7 @@
 package com.progastro.inventario.models.Entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import org.hibernate.annotations.ManyToAny;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
 
@@ -60,8 +59,6 @@ public class Compra {
     @Column(nullable = false, length = 30)
     private EstatusCompra estatus;
 
-
-
-    
-    
+    @Column(name = "total", nullable= false, precision= 12, scale= 2)
+    private BigDecimal total;
 }
