@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.progastro.inventario.models.Enums.EstatusCompra;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +20,7 @@ public class CompraResponseDTO {
     private LocalDateTime fecha;
     private String proveedor;
     private String numeroFactura;
-    private String estatus;
+    private EstatusCompra estatus;
     private BigDecimal total;
     private List<CompraProductoReponseDTO> productos;
 }

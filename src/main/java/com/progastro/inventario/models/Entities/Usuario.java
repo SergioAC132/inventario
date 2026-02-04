@@ -30,5 +30,5 @@ public class Usuario {
     private String password;
 
     @Column(nullable = false)
-    private int enabled;
+    private Boolean enabled;
 }

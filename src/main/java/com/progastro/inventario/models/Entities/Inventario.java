@@ -31,7 +31,6 @@ public class Inventario {
     @Column(name = "id_inventario")
     private Long idInventario;
 
-    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional= false)
     @JoinColumn(
         name = "id_producto",

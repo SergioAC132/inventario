@@ -2,6 +2,7 @@ package com.progastro.inventario.models.Entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
 
@@ -16,6 +17,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -61,4 +63,7 @@ public class Compra {
 
     @Column(name = "total", nullable= false, precision= 12, scale= 2)
     private BigDecimal total;
+
+    @OneToMany(mappedBy= "compra", fetch= FetchType.LAZY)
+    private List<CompraProductos> productos;
 }

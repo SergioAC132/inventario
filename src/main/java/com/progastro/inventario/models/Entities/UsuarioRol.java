@@ -1,24 +1,21 @@
 package com.progastro.inventario.models.Entities;
 
-import java.io.Serializable;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Embeddable
+@Entity
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
-public class UsuarioRol implements Serializable {
-
-    @Column(name = "id_usuario")
-    private Long idUsuario;
-
-    @Column(name = "id_rol")
-    private Long idRol;
+@NoArgsConstructor
+@Table(name = "usuario_roles")
+public class UsuarioRol {
+    
+    @EmbeddedId
+    private UsuarioRolId id;
 }

@@ -1,11 +1,19 @@
 package com.progastro.inventario.services.Impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
+import com.progastro.inventario.mappers.CompraMapper;
 import com.progastro.inventario.models.DTO.CompraProductoRequestDTO;
 import com.progastro.inventario.models.DTO.CompraRequestDTO;
 import com.progastro.inventario.models.DTO.CompraResponseDTO;
@@ -18,6 +26,7 @@ import com.progastro.inventario.repositories.CompraProductosRepository;
 import com.progastro.inventario.repositories.CompraRepository;
 import com.progastro.inventario.repositories.ProveedorRepository;
 import com.progastro.inventario.services.CompraServiceBridge;
+import com.progastro.inventario.services.InventarioServiceBridge;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
@@ -30,11 +39,14 @@ public class CompraServiceImpl implements CompraServiceBridge {
     private final CompraProductosRepository compraProductosRepository;
     private final CompraRepository compraRepository;
     private final ProveedorRepository proveedorRepository;
+    private final InventarioServiceBridge inventarioService;
+    private final CompraMapper compraMapper;
 
     @Override
     @Transactional
     public CompraResponseDTO registrarCompra(CompraRequestDTO request) {
-        
+
+        List<CompraProductos> listaProductos = new ArrayList<>();
         Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura()); 
         
 
@@ -50,7 +62,7 @@ public class CompraServiceImpl implements CompraServiceBridge {
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         request.getProductos().forEach(e -> {
-            Inventario inventario = obtenerOCrearInventario(e);
+            Inventario inventario = inventarioService.obtenerOCrearInventario(e);
 
             CompraProductos cp = new CompraProductos();
 
@@ -60,19 +72,22 @@ public class CompraServiceImpl implements CompraServiceBridge {
             cp.setCostoTotal(e.getCostoTotal());
             cp.setSubtotal(e.getCostoUnitario() != null ? e.getCostoUnitario() : null);
 
-            compraProductosRepository.save(cp);
+            listaProductos.add(cp);
+            //compraProductosRepository.save(cp);
         });
 
         compra.setTotal(totalCompra);
+        compra.setProductos(listaProductos);
         compraRepository.save(compra);
+        listaProductos.forEach(lp -> compraProductosRepository.save(lp));
 
-        return mapper.mapToResponse(compra);
+        return compraMapper.toResponse(compra);
     }
 
     private Proveedor validarDatosProveedor(Long proveedorId, String numeroFactura) {
 
         Proveedor proveedor = proveedorRepository.findById(proveedorId).orElseThrow(() ->
-            new ResourceNotFoundException(("Proveedor no encontrado con id" + proveedorId).toString())
+            new ResourceNotFoundException(("Proveedor no encontrado con id" + proveedorId))
         );
 
         boolean facturaDuplicada = compraRepository.existsByNumeroFacturaAndProveedor(numeroFactura, proveedor);
@@ -85,6 +100,17 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
         return proveedor;
     }
+
+    @Override
+    public Page<CompraResponseDTO> listarCompras(String proveedor, String estatus, LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
+
+        Page<Compra> compras = compraRepository.findByFiltros(proveedor, estatus, fechaInicio, fechaFin, pageable);
+        
+        return compras.map(compraMapper::toResponse);
+    }
+
     
 }
 

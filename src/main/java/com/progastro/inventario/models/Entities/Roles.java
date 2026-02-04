@@ -17,7 +17,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(
-    name = "compra_productos"
+    name = "roles"
 )
 public class Roles {
     

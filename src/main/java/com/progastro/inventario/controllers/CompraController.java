@@ -1,5 +1,9 @@
 package com.progastro.inventario.controllers;
 
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +18,9 @@ import com.progastro.inventario.services.CompraServiceBridge;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 
 
@@ -28,9 +35,20 @@ public class CompraController {
     public ResponseEntity<ApiResponse<CompraResponseDTO>> registrarCompra(@RequestBody @Valid 
                                                                         CompraRequestDTO request) {
         CompraResponseDTO response = compraServiceBridge.registrarCompra(request);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Compra registrada correctamente", response));
-    
     }
-    
+
+    @GetMapping("/consultar-compras")
+    public ResponseEntity<Page<CompraResponseDTO>> listarCompras(@RequestParam(required = false) String proveedor,
+                                                                            @RequestParam(required = false) String estatus,
+                                                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+                                                                            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+                                                                            @RequestParam(defaultValue = "0")int page,
+                                                                            @RequestParam(defaultValue = "20") int size
+                                                                            ) {
+
+        Page<CompraResponseDTO> result = compraServiceBridge.listarCompras(proveedor, estatus, fechaInicio, fechaFin, page, size);
+
+        return ResponseEntity.status(HttpStatus.OK).body(result);
+    }
 }

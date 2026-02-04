@@ -7,6 +7,8 @@ import com.progastro.inventario.models.Enums.TipoSalida;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,9 +36,11 @@ public class Salida {
     @Column(nullable= false)
     private LocalDateTime fecha;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 15)
     private TipoSalida tipo;
 
-    @Column(nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DestinoSalida destino;
 }
