@@ -51,4 +51,11 @@ public class CompraController {
 
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
+
+    @PostMapping("/editar-compra")
+    public ResponseEntity<ApiResponse<CompraResponseDTO>> editarCompra(@RequestBody @Valid CompraRequestDTO request, Long idCompra) {
+        CompraResponseDTO response = compraServiceBridge.editarCompra(idCompra, request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(true, "Compra editada correctamente", response));
+    }
+    
 }

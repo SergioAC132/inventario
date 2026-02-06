@@ -10,5 +10,7 @@ import com.progastro.inventario.models.DTO.CompraResponseDTO;
 public interface CompraServiceBridge {
     CompraResponseDTO registrarCompra(CompraRequestDTO request);
 
+    CompraResponseDTO editarCompra (Long idCompra, CompraRequestDTO request);
+
     Page<CompraResponseDTO> listarCompras(String proveedor, String estatus, LocalDate fechaInicio, LocalDate fechaFin, int page, int size);
 }

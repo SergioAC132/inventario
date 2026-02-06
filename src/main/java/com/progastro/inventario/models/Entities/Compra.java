@@ -2,10 +2,12 @@ package com.progastro.inventario.models.Entities;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -64,6 +66,6 @@ public class Compra {
     @Column(name = "total", nullable= false, precision= 12, scale= 2)
     private BigDecimal total;
 
-    @OneToMany(mappedBy= "compra", fetch= FetchType.LAZY)
-    private List<CompraProductos> productos;
+    @OneToMany(mappedBy= "compra", cascade = CascadeType.ALL, orphanRemoval= true, fetch= FetchType.LAZY)
+    private List<CompraProductos> productos = new ArrayList<>();
 }
