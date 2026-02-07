@@ -4,7 +4,6 @@ import java.util.List;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
 
-
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -19,6 +18,8 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CompraRequestDTO {
     
+    private Long idCompra;
+
     @NotNull
     private Long proveedorId;
 
@@ -28,5 +29,5 @@ public class CompraRequestDTO {
     @NotEmpty
     private List<CompraProductoRequestDTO> productos;
 
-    private EstatusCompra estatus;
+    private EstatusCompra estatus = EstatusCompra.REGISTRADA;
 }

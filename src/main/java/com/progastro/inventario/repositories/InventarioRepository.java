@@ -13,6 +13,6 @@ import com.progastro.inventario.models.Entities.Producto;
 public interface InventarioRepository extends JpaRepository<Inventario, Long> {
 
     Optional<Inventario> findByProductoAndLoteAndFechaCaducidad(Producto producto, String lote,
-            LocalDate fechaCaducidad);
+                                                                LocalDate fechaCaducidad);
 }
 

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.models.DTO.CompraProductoRequestDTO;
+import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Inventario;
 import com.progastro.inventario.models.Entities.Producto;
 import com.progastro.inventario.repositories.InventarioRepository;
@@ -47,4 +48,18 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         return inventarioRepository.save(nuevo);
     }
     
+    @Override
+    @Transactional
+    public void revertirIngresoPorCompra(CompraProductos cp) {
+        Inventario inv = cp.getInventario();
+
+        inv.setCantidadDisponible(inv.getCantidadDisponible() - cp.getCantidad());
+
+        if(inv.getCantidadDisponible() <= 0) {
+            inv.setActive(false);
+        }
+
+        inventarioRepository.save(inv);
+    }
+
 }

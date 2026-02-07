@@ -66,6 +66,6 @@ public class Compra {
     @Column(name = "total", nullable= false, precision= 12, scale= 2)
     private BigDecimal total;
 
-    @OneToMany(mappedBy= "compra", cascade = CascadeType.ALL, orphanRemoval= true, fetch= FetchType.LAZY)
+    @OneToMany(mappedBy= "compra", cascade = CascadeType.ALL, orphanRemoval = true, fetch= FetchType.LAZY)
     private List<CompraProductos> productos = new ArrayList<>();
 }

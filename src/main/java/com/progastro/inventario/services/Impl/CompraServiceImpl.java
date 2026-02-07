@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ import com.progastro.inventario.repositories.CompraRepository;
 import com.progastro.inventario.repositories.ProveedorRepository;
 import com.progastro.inventario.services.CompraServiceBridge;
 import com.progastro.inventario.services.InventarioServiceBridge;
+import static com.progastro.inventario.util.Constantes.COMPRA_NO_ENCONTRADA_ID;
 
 import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
@@ -50,14 +52,14 @@ public class CompraServiceImpl implements CompraServiceBridge {
     public CompraResponseDTO registrarCompra(CompraRequestDTO request) {
 
         List<CompraProductos> listaProductos = new ArrayList<>();
-        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura());
+        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), null);
         
 
         Compra compra = new Compra();
         compra.setFecha(LocalDateTime.now());
         compra.setProveedor(proveedor);
         compra.setNumeroFactura(request.getNumeroFactura());
-        compra.setEstatus(request.getEstatus().equals("") ? EstatusCompra.REGISTRADA : request.getEstatus());
+        compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());
 
         BigDecimal totalCompra = request.getProductos()
                     .stream()
@@ -87,13 +89,19 @@ public class CompraServiceImpl implements CompraServiceBridge {
         return compraMapper.toResponse(compra);
     }
 
-    private Proveedor validarDatosProveedor(Long proveedorId, String numeroFactura) {
+    private Proveedor validarDatosProveedor(Long proveedorId, String numeroFactura, Long idCompra) {
 
         Proveedor proveedor = proveedorRepository.findById(proveedorId).orElseThrow(() ->
             new ResourceNotFoundException(("Proveedor no encontrado con id" + proveedorId))
         );
 
-        boolean facturaDuplicada = compraRepository.existsByNumeroFacturaAndProveedor(numeroFactura, proveedor);
+        boolean facturaDuplicada;
+
+        if (idCompra == null) {
+            facturaDuplicada = compraRepository.existsByNumeroFacturaAndProveedor(numeroFactura, proveedor);
+        } else {
+            facturaDuplicada = compraRepository.existsByNumeroFacturaAndProveedorAndIdCompraNot(numeroFactura, proveedor, idCompra);    
+        }
 
         if (facturaDuplicada) {
             throw new ValidationException(
@@ -118,55 +126,76 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
     @Override
     @Transactional
-    public CompraResponseDTO editarCompra (Long idCompra, CompraRequestDTO request) {
+    public CompraResponseDTO editarCompra (CompraRequestDTO request) {
 
-        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura());
+        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), request.getIdCompra());
         
 
-        Compra compra = compraRepository.findById(idCompra).orElseThrow(() ->
-            new ResourceNotFoundException(("Compra no encontrada con id" + idCompra))
+        Compra compra = compraRepository.findById(request.getIdCompra()).orElseThrow(() ->
+            new ResourceNotFoundException((COMPRA_NO_ENCONTRADA_ID + request.getIdCompra()))
         );
         compra.setProveedor(proveedor);
         compra.setNumeroFactura(request.getNumeroFactura());
-        compra.setEstatus(request.getEstatus());
+        compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());
 
-        Map<String, CompraProductos> existentes = compra.getProductos().stream().collect(Collectors.toMap(cp -> cp.getInventario().getIdInventario(), Function.identity()));
-
-        List<CompraProductos> listaProductos = compra.getProductos();
+        Map<Long, CompraProductos> existentes = compra.getProductos().stream()
+                                                                       .collect(Collectors.toMap(
+                                                                        cp -> cp.getInventario()
+                                                                        .getIdInventario(), Function.identity()));
         
         for (CompraProductoRequestDTO dto : request.getProductos()) {
-            Long idInventario = dto.getIn
+            Inventario inventario = inventarioService.obtenerOCrearInventario(dto);
+            Long key = inventario.getIdInventario();
+
+            if (existentes.containsKey(key)) {
+                CompraProductos cp = existentes.get(key);
+                cp.setCantidad(dto.getCantidad());
+                cp.setCostoTotal(dto.getCostoTotal());
+                cp.setSubtotal(dto.getCostoUnitario());
+            } else {
+                CompraProductos nuevo = new CompraProductos();
+                nuevo.setCompra(compra);
+                nuevo.setInventario(inventario);
+                nuevo.setCantidad(dto.getCantidad());
+                nuevo.setCostoTotal(dto.getCostoTotal());
+                nuevo.setSubtotal(dto.getCostoUnitario());
+
+                compra.getProductos().add(nuevo);
+            }
         }
 
-        if (!compra.getProductos().equals(request.getProductos())) {
-            
-            request.getProductos().forEach(e -> {
-                if (!compra.getProductos().contains(e)) {    
-                    Inventario inventario = inventarioService.obtenerOCrearInventario(e);
-                    CompraProductos cp = new CompraProductos();
+        Set<String> keysRequest  = request.getProductos().stream().map(dto -> dto.getProductoId() + "|" + dto.getLote() + "|" + dto.getFechaCaducidad()).collect(Collectors.toSet());
 
-                    cp.setCompra(compra);
-                    cp.setInventario(inventario);
-                    cp.setCantidad(e.getCantidad());
-                    cp.setCostoTotal(e.getCostoTotal());
-                    cp.setSubtotal(e.getCostoUnitario() != null ? e.getCostoUnitario() : null);
+        compra.getProductos().forEach(cp -> {
+            if (!keysRequest.contains(generarKey(cp.getInventario()))) {
+                inventarioService.revertirIngresoPorCompra(cp);
+            }
+        });
 
-                    listaProductos.add(cp);
-                }
-                
-                //compraProductosRepository.save(cp);
-            });
-        }
+        compra.getProductos().removeIf(cp -> !keysRequest.contains(generarKey(cp.getInventario())));
+
+        BigDecimal totalCompra = compra.getProductos().stream().map(CompraProductos::getCostoTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         compra.setTotal(totalCompra);
-        compra.setProductos(listaProductos);
         compraRepository.save(compra);
-        listaProductos.forEach(lp -> compraProductosRepository.save(lp));
-
         return compraMapper.toResponse(compra);
     }
 
     private String generarKey(Inventario inv) {
         return inv.getProducto().getIdProducto() + "|" + inv.getLote() + "|" + inv.getFechaCaducidad();
+    }
+
+    @Override
+    @Transactional
+    public void cancelarCompra(Long idCompra) {
+        Compra compra = compraRepository.findById(idCompra).orElseThrow(() ->
+            new ResourceNotFoundException((COMPRA_NO_ENCONTRADA_ID + idCompra))
+        );
+
+        if (compra.getEstatus() == EstatusCompra.CANCELADA) return;
+
+        compra.setEstatus(EstatusCompra.CANCELADA);
+        compra.getProductos().forEach(cp -> inventarioService.revertirIngresoPorCompra(cp));
+        compraRepository.save(compra);
     }
 }

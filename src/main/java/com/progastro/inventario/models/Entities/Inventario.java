@@ -23,7 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(
-    name = "inventario"
+    name = "inventarios"
 )
 public class Inventario {
     @Id
@@ -47,4 +47,7 @@ public class Inventario {
 
     @Column(name = "cantidad_disponible", nullable= false)
     private Integer cantidadDisponible;
+
+    @Column(name = "active", nullable= false)
+    private Boolean active = true;
 }
