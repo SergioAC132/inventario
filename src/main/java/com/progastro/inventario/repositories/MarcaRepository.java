@@ -22,4 +22,6 @@ public interface MarcaRepository extends JpaRepository<Marca, Long>{
             WHERE (:nombre IS NULL OR LOWER(nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
             """)
     public Page<Marca> findByFiltro(@Param("nombre") String nombre, Pageable pageable);
+
+    boolean existsByNombreIgnoreCaseAndIdMarcaNot(String nombre, Long idMarca);
 }

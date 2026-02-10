@@ -1,6 +1,5 @@
 package com.progastro.inventario.controllers;
 
-import static org.hibernate.engine.jdbc.Size.LobMultiplier.M;
 import org.springframework.data.domain.Page;
 
 import org.springframework.http.HttpStatus;
@@ -22,8 +21,6 @@ import com.progastro.inventario.services.MarcaServiceBridge;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
-
 @RestController
 @RequestMapping("api/marcas")
 @RequiredArgsConstructor
@@ -44,5 +41,10 @@ public class MarcaController {
         Page<MarcaResponseDTO> result = marcaServiceBridge.listarMarcas(nombre, page, size);
         return ResponseEntity.status(HttpStatus.OK).body(result);
     }
-    
+
+    @PostMapping("/editar-marca")
+    public ResponseEntity<ApiResponse<MarcaResponseDTO>> editarMarca(@RequestBody @Valid MarcaRequestDTO request) {
+        MarcaResponseDTO response = marcaServiceBridge.editarMarca(request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(true, "Marca editada correctamente", response));
+    }
 }

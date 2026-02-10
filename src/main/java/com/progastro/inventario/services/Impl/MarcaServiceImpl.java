@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.mappers.MarcaMapper;
 import com.progastro.inventario.models.DTO.MarcaRequestDTO;
 import com.progastro.inventario.models.DTO.MarcaResponseDTO;
@@ -47,5 +48,24 @@ public class MarcaServiceImpl implements MarcaServiceBridge {
         Page<Marca> marcas = marcaRepository.findByFiltro(nombre, pageable);
 
         return marcas.map(marcaMapper::toResponse);
+    }
+
+    @Override
+    @Transactional
+    public MarcaResponseDTO editarMarca(MarcaRequestDTO request) {
+        String nombreNormalizado = request.getNombre().trim().toUpperCase();
+
+        if (marcaRepository.existsByNombreIgnoreCaseAndIdMarcaNot(nombreNormalizado, request.getIdMarca())) {
+            throw new ValidationException("La marca '" + nombreNormalizado + "' ya existe");
+        }
+
+        Marca marca = marcaRepository.findById(request.getIdMarca()).orElseThrow(() ->
+            new ResourceNotFoundException("Marca no encontrada con el ID: " + request.getIdMarca())
+        );
+        marca.setNombre(nombreNormalizado);
+
+        Marca guardada = marcaRepository.save(marca);
+
+        return marcaMapper.toResponse(guardada);
     }
 }

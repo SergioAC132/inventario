@@ -9,4 +9,6 @@ public interface MarcaServiceBridge {
     MarcaResponseDTO registrarMarca(MarcaRequestDTO request);
 
     Page<MarcaResponseDTO> listarMarcas(String nombre, int page, int size);
+
+    MarcaResponseDTO editarMarca(MarcaRequestDTO request);
 }
