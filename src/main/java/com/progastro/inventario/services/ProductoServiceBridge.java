@@ -10,5 +10,6 @@ public interface ProductoServiceBridge {
     ProductoResponseDTO registrarProducto(ProductoRequestDTO request);
 
     Page<ProductoResponseDTO> listarProductos(String marca, String nombre, String codigo, int page, int size);
-    
+
+    ProductoResponseDTO editarProducto(ProductoRequestDTO request);
 }

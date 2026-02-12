@@ -18,7 +18,7 @@ public interface ProductoRepository extends JpaRepository<Producto, Long>{
     boolean existsByCodigoAndMarcaAndIdProductoNot(String codigo, Marca marca, Long idProducto);
     
     @Query("""
-            SELECT p FROM Producto p JOIN FETCH p.marca
+            SELECT p FROM Producto p JOIN p.marca m
             WHERE (:marca IS NULL OR LOWER(p.marca.nombre) LIKE LOWER(CONCAT('%', :marca, '%')))
             AND (:nombre IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
             AND (:codigo IS NULL OR LOWER(p.codigo) LIKE LOWER(CONCAT('%', :codigo, '%')))

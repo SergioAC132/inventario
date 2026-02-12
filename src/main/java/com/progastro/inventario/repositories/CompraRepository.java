@@ -20,7 +20,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
     boolean existsByNumeroFacturaAndProveedorAndIdCompraNot(String numeroFactura, Proveedor proveedor, Long idCompra);
 
     @Query("""
-        SELECT c FROM Compra c JOIN FETCH c.proveedor
+        SELECT c FROM Compra c JOIN c.proveedor p
         WHERE (:proveedor IS NULL OR LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :proveedor, '%')))
         AND (:estatus IS NULL OR c.estatus = :estatus)
         AND (:fechaInicio IS NULL OR c.fecha >= :fechaInicio)

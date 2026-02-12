@@ -16,9 +16,9 @@ public interface CompraProductosRepository extends JpaRepository<CompraProductos
     @Query("""
             SELECT cp
             FROM CompraProductos cp
-            JOIN FETCH cp.inventario i
-            JOIN FETCH i.producto p
-            JOIN FETCH p.marca m
+            JOIN cp.inventario i
+            JOIN i.producto p
+            JOIN p.marca m
             WHERE cp.compra = :compra
             """)
     List<CompraProductos> findByCompra(Compra compra);

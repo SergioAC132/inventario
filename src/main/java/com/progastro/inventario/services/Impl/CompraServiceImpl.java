@@ -15,6 +15,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.mappers.CompraMapper;
@@ -33,7 +34,6 @@ import com.progastro.inventario.services.CompraServiceBridge;
 import com.progastro.inventario.services.InventarioServiceBridge;
 import static com.progastro.inventario.util.Constantes.COMPRA_NO_ENCONTRADA_ID;
 
-import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 
@@ -113,6 +113,7 @@ public class CompraServiceImpl implements CompraServiceBridge {
     }
 
     @Override
+    @Transactional(readOnly= true)
     public Page<CompraResponseDTO> listarCompras(String proveedor, String estatus, LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());

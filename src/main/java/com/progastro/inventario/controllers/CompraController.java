@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.progastro.inventario.models.DTO.CompraRequestDTO;
 import com.progastro.inventario.models.DTO.CompraResponseDTO;
+import com.progastro.inventario.models.DTO.PageResponse;
 import com.progastro.inventario.models.Response.ApiResponse;
 import com.progastro.inventario.services.CompraServiceBridge;
 
@@ -39,7 +40,7 @@ public class CompraController {
     }
 
     @GetMapping("/consultar-compras")
-    public ResponseEntity<Page<CompraResponseDTO>> listarCompras(@RequestParam(required = false) String proveedor,
+    public ResponseEntity<PageResponse<CompraResponseDTO>> listarCompras(@RequestParam(required = false) String proveedor,
                                                                             @RequestParam(required = false) String estatus,
                                                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
                                                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
@@ -49,7 +50,16 @@ public class CompraController {
 
         Page<CompraResponseDTO> result = compraServiceBridge.listarCompras(proveedor, estatus, fechaInicio, fechaFin, page, size);
 
-        return ResponseEntity.status(HttpStatus.OK).body(result);
+        PageResponse<CompraResponseDTO> response =
+            new PageResponse<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages(),
+                result.isLast()
+            );
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @PostMapping("/editar-compra")
