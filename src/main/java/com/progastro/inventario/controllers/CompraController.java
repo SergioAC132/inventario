@@ -34,7 +34,7 @@ public class CompraController {
     
     @PostMapping("/registrar-compra")
     public ResponseEntity<ApiResponse<CompraResponseDTO>> registrarCompra(@RequestBody @Valid 
-                                                                        CompraRequestDTO request) {
+                                                                            CompraRequestDTO request) {
         CompraResponseDTO response = compraServiceBridge.registrarCompra(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Compra registrada correctamente", response));
     }
