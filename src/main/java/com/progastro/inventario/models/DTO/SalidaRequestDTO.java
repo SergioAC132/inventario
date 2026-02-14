@@ -27,5 +27,5 @@ public class SalidaRequestDTO {
     private DestinoSalida destino;
 
     @NotEmpty
-    private List<SalidaProductosRequestDTO> productos;
+    private List<SalidaProductoRequestDTO> productos;
 }

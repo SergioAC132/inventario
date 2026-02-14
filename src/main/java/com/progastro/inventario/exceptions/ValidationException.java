@@ -1,7 +1,7 @@
 package com.progastro.inventario.exceptions;
 
-public class ValidationException {
+public class ValidationException extends RuntimeException {
     public ValidationException(String message) {
-        super();
+        super(message);
     }
 }

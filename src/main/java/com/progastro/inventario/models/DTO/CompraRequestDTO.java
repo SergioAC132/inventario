@@ -1,5 +1,6 @@
 package com.progastro.inventario.models.DTO;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
@@ -22,6 +23,8 @@ public class CompraRequestDTO {
 
     @NotNull
     private Long proveedorId;
+
+    private LocalDateTime fecha;
 
     @NotBlank
     private String numeroFactura;

@@ -53,4 +53,7 @@ public class SalidaProductos {
 
     @Column(nullable= false, precision=10, scale=2)
     private BigDecimal subtotal;
+
+    @Column(name= "costo_total", nullable= false, precision= 12, scale= 2)
+    private BigDecimal costoTotal;
 }

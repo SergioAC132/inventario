@@ -1,9 +1,8 @@
 package com.progastro.inventario.models.DTO;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,11 +12,14 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class SalidaResponseDTO {
-    private Long idSalida;
-    private LocalDateTime fecha;
-    private String tipo;
-    private String destino;
+public class SalidaProductoRequestDTO {
+    @NotNull
+    private Long idInventario;
+
+    @NotNull
+    private Integer cantidad;
+
+    private BigDecimal subtotal;
+
     private BigDecimal total;
-    private List<SalidaProductoResponseDTO> productos;
 }

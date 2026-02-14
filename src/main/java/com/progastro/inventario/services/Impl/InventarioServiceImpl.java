@@ -12,6 +12,7 @@ import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.mappers.InventarioMapper;
 import com.progastro.inventario.models.DTO.CompraProductoRequestDTO;
 import com.progastro.inventario.models.DTO.InventarioResponseDTO;
+import com.progastro.inventario.models.DTO.SalidaProductoRequestDTO;
 import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Inventario;
 import com.progastro.inventario.models.Entities.Producto;
@@ -95,6 +96,21 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         return productoRepository.findById(idProducto).orElseThrow(() ->
             new ResourceNotFoundException(PRODUCTO_NO_ENCONTRADO_ID + idProducto)
         );
+    }
+
+    @Override
+    @Transactional
+    public Inventario restarStock(SalidaProductoRequestDTO request) {
+        Inventario inventario = inventarioRepository.findById(request.getIdInventario()).orElseThrow(() ->
+                new ResourceNotFoundException("Inventario no encontrado con id " + request.getIdInventario())
+            );
+
+        inventario.setCantidadDisponible(inventario.getCantidadDisponible() - request.getCantidad());
+
+        if (inventario.getCantidadDisponible() == 0) {
+            inventario.setActive(false);
+        }
+        return inventarioRepository.save(inventario);
     }
 
 }

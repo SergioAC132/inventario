@@ -2,7 +2,6 @@ package com.progastro.inventario.services.Impl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,7 @@ public class CompraServiceImpl implements CompraServiceBridge {
         
 
         Compra compra = new Compra();
-        compra.setFecha(LocalDateTime.now());
+        compra.setFecha(request.getFecha());
         compra.setProveedor(proveedor);
         compra.setNumeroFactura(request.getNumeroFactura());
         compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());

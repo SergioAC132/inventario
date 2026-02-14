@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 
 import com.progastro.inventario.models.DTO.CompraProductoRequestDTO;
 import com.progastro.inventario.models.DTO.InventarioResponseDTO;
+import com.progastro.inventario.models.DTO.SalidaProductoRequestDTO;
 import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Inventario;
 
@@ -18,4 +19,6 @@ public interface InventarioServiceBridge {
                                                     int page, int size);
 
     void modificarStock(Long idInventario, Boolean modificacion);
+
+    Inventario restarStock(SalidaProductoRequestDTO dto);
 }

@@ -46,7 +46,7 @@ public class CompraController {
                                                                             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
                                                                             @RequestParam(defaultValue = "0")int page,
                                                                             @RequestParam(defaultValue = "20") int size
-                                                                            ) {
+                                                                        ) {
 
         Page<CompraResponseDTO> result = compraServiceBridge.listarCompras(proveedor, estatus, fechaInicio, fechaFin, page, size);
 

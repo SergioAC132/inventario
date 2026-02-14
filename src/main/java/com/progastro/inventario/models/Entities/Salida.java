@@ -1,5 +1,6 @@
 package com.progastro.inventario.models.Entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,9 @@ public class Salida {
     @Enumerated(EnumType.STRING)
     @Column(name="destino", nullable = false)
     private DestinoSalida destino;
+
+    @Column(name= "total", nullable= false, precision= 12, scale= 2)
+    private BigDecimal total;
 
     @OneToMany(mappedBy="salida", cascade = CascadeType.ALL, orphanRemoval= true, fetch= FetchType.LAZY)
     private List<SalidaProductos> productos = new ArrayList<>();
