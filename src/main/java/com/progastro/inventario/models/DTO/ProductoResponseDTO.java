@@ -1,5 +1,7 @@
 package com.progastro.inventario.models.DTO;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,4 +20,6 @@ public class ProductoResponseDTO {
     private String nombre;
 
     private String nombreMarca;
+
+    private List<InventarioResponseDTO> inventarios;
 }

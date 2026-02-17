@@ -1,11 +1,38 @@
 package com.progastro.inventario.repositories;
 
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.progastro.inventario.models.Entities.Salida;
 
 @Repository
 public interface SalidaRepository extends JpaRepository<Salida, Long> {
+
+    @Query("""
+    SELECT DISTINCT s
+    FROM Salida s
+    LEFT JOIN s.productos sp
+    LEFT JOIN sp.inventario i
+    LEFT JOIN i.producto p
+    WHERE (:destino IS NULL OR s.destino = :destino)
+    AND (:tipo IS NULL OR s.tipo = :tipo)
+    AND (:fechaInicio IS NULL OR s.fecha >= :fechaInicio)
+    AND (:fechaFin IS NULL OR s.fecha <= :fechaFin)
+    AND (:nombreProducto IS NULL OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :nombreProducto, '%')))
+    """)
+    Page<Salida> findByFiltros(
+        @Param("nombreProducto") String nombreProducto,
+        @Param("destino") String destino,
+        @Param("tipo") String tipo,
+        @Param("fechaInicio") LocalDate fechaInicio,
+        @Param("fechaFin") LocalDate fechaFin,
+        Pageable pageable
+    );
     
 }

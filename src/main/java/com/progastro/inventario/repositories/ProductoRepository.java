@@ -25,4 +25,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long>{
             """)
     Page<Producto> findByFiltros(@Param("marca") String marca, @Param("nombre") String nombre,
                                     @Param("codigo") String codigo, Pageable pageable);
+
+    public Producto findByNombre(String nombreProducto);
+
+    
 }

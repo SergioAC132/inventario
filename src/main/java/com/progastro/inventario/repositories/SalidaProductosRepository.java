@@ -7,5 +7,4 @@ import com.progastro.inventario.models.Entities.SalidaProductos;
 
 @Repository
 public interface SalidaProductosRepository extends JpaRepository<SalidaProductos, Long>{
-    
 }

@@ -61,6 +61,11 @@ public class SalidaController {
             );
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
-    
+
+    @PostMapping("/editar-salida")
+    public ResponseEntity<ApiResponse<SalidaResponseDTO>> editarSalida(@RequestBody @Valid SalidaRequestDTO request) {
+        SalidaResponseDTO response = salidaServiceBridge.editarSalida(request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(true, "Salida editada correctamente", response));
+    }
     
 }
