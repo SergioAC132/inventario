@@ -9,6 +9,7 @@ import com.progastro.inventario.models.DTO.InventarioResponseDTO;
 import com.progastro.inventario.models.DTO.SalidaProductoRequestDTO;
 import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Inventario;
+import com.progastro.inventario.models.Entities.SalidaProductos;
 
 public interface InventarioServiceBridge {
     Inventario obtenerOCrearInventario(CompraProductoRequestDTO dto);
@@ -21,4 +22,10 @@ public interface InventarioServiceBridge {
     void modificarStock(Long idInventario, Boolean modificacion);
 
     Inventario restarStock(SalidaProductoRequestDTO dto);
+
+    void revertirSalida(SalidaProductos sp);
+
+    void ajustarStockPorEdicionSalida(Inventario inventario, int diferencia);
+
+    Inventario obtenerInventarioParaSalida(SalidaProductoRequestDTO dto);
 }

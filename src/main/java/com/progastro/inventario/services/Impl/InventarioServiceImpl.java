@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.mappers.InventarioMapper;
@@ -16,12 +17,13 @@ import com.progastro.inventario.models.DTO.SalidaProductoRequestDTO;
 import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Inventario;
 import com.progastro.inventario.models.Entities.Producto;
+import com.progastro.inventario.models.Entities.SalidaProductos;
 import com.progastro.inventario.repositories.InventarioRepository;
 import com.progastro.inventario.repositories.ProductoRepository;
 import com.progastro.inventario.services.InventarioServiceBridge;
+import static com.progastro.inventario.util.Constantes.INVENTARIO_NO_ENCONTRADO_ID;
 import static com.progastro.inventario.util.Constantes.PRODUCTO_NO_ENCONTRADO_ID;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -86,7 +88,7 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
     @Transactional
     public void modificarStock(Long idInventario, Boolean modificacion) {
         Inventario inventario = inventarioRepository.findById(idInventario).orElseThrow(() ->
-            new ResourceNotFoundException("Inventario no encontrado con id:" + idInventario)
+            new ResourceNotFoundException(INVENTARIO_NO_ENCONTRADO_ID + idInventario)
         );
 
         inventario.setCantidadDisponible(modificacion ? inventario.getCantidadDisponible()+1 : inventario.getCantidadDisponible()-1);
@@ -102,7 +104,7 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
     @Transactional
     public Inventario restarStock(SalidaProductoRequestDTO request) {
         Inventario inventario = inventarioRepository.findById(request.getIdInventario()).orElseThrow(() ->
-                new ResourceNotFoundException("Inventario no encontrado con id " + request.getIdInventario())
+                new ResourceNotFoundException(INVENTARIO_NO_ENCONTRADO_ID + request.getIdInventario())
             );
 
         inventario.setCantidadDisponible(inventario.getCantidadDisponible() - request.getCantidad());
@@ -113,4 +115,26 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         return inventarioRepository.save(inventario);
     }
 
+    @Override
+    @Transactional
+    public void revertirSalida(SalidaProductos sp) {
+        Inventario inv = sp.getInventario();
+        inv.setCantidadDisponible(inv.getCantidadDisponible() + sp.getCantidad());
+        inventarioRepository.save(inv);
+    }
+
+    @Override
+    @Transactional
+    public void ajustarStockPorEdicionSalida(Inventario inventario, int diferencia) {
+        inventario.setCantidadDisponible(inventario.getCantidadDisponible() - diferencia);
+        inventarioRepository.save(inventario);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Inventario obtenerInventarioParaSalida(SalidaProductoRequestDTO dto) {
+        return inventarioRepository.findById(dto.getIdInventario()).orElseThrow(() ->
+            new ResourceNotFoundException(INVENTARIO_NO_ENCONTRADO_ID + dto.getIdInventario())
+        );
+    }
 }

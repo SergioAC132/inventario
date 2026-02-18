@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
@@ -130,7 +129,8 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SalidaResponseDTO> listarSalidas(String nombreProducto, String destino, String tipo, LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
+    public Page<SalidaResponseDTO> listarSalidas(String nombreProducto, String destino, String tipo, 
+                                                    LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
         Page<Salida> salidas = salidaRepository.findByFiltros(nombreProducto, destino, tipo, fechaInicio, fechaFin, pageable);
         return salidas.map(salidaMapper::toResponse);
@@ -140,29 +140,98 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
     @Transactional
     public SalidaResponseDTO editarSalida(SalidaRequestDTO request) {
 
-        Salida salida = salidaRepository.findById(request.getIdSalida()).orElseThrow(() ->
-            new ResourceNotFoundException(("Salida no encontrada con el id: " + request.getIdSalida())));
+        Salida salida = salidaRepository.findById(request.getIdSalida())
+            .orElseThrow(() -> new ResourceNotFoundException("Salida no encontrada"));
 
-        salida.setDestino(request.getDestino());
-        salida.setTipo(request.getTipo());
         salida.setFecha(request.getFecha());
+        salida.setTipo(request.getTipo());
+        salida.setDestino(request.getDestino());
 
         validarEdicion(request.getProductos(), salida.getProductos());
-        
-        BigDecimal totalSalida = request.getProductos()
-                    .stream()
-                    .map(SalidaProductoRequestDTO::getTotal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        Map<Long, SalidaProductos> existentes = salida.getProductos().stream()
-                                                                    .collect(Collectors.toMap(
-                                                                        sp -> sp.getInventario().getIdInventario(),
-                                                                        Function.identity()));
+        Map<Long, SalidaProductos> productosActuales = salida.getProductos().stream()
+            .collect(Collectors.toMap(
+                sp -> sp.getInventario().getIdInventario(),
+                Function.identity()
+            ));
+
+        Map<Long, SalidaProductoRequestDTO> productosRequest = request.getProductos().stream()
+            .collect(Collectors.toMap(
+                SalidaProductoRequestDTO::getIdInventario,
+                Function.identity()
+            ));
+
+        salida.getProductos().removeIf(sp -> {
+            Long idInventario = sp.getInventario().getIdInventario();
+
+            if (!productosRequest.containsKey(idInventario)) {
+                // devolver stock
+                Inventario inventario = sp.getInventario();
+                inventario.setCantidadDisponible(
+                    inventario.getCantidadDisponible() + sp.getCantidad()
+                );
+                return true; 
+            }
+            return false;
+        });
 
         for (SalidaProductoRequestDTO dto : request.getProductos()) {
-            Inventario inventario = inventarioService.obtenerOCrearInventario(dto);
-            
-        }
-    }
 
+            Inventario inventario = inventarioRepository.findById(dto.getIdInventario())
+                .orElseThrow(() ->
+                    new ResourceNotFoundException("Inventario no encontrado")
+                );
+
+            if (productosActuales.containsKey(dto.getIdInventario())) {
+                SalidaProductos existente = productosActuales.get(dto.getIdInventario());
+
+                int cantidadOriginal = existente.getCantidad();
+                int cantidadNueva = dto.getCantidad();
+                int diferencia = cantidadNueva - cantidadOriginal;
+
+                if (diferencia > 0 && diferencia > inventario.getCantidadDisponible()) {
+                    throw new ValidationException(
+                        "Stock insuficiente para el producto " + inventario.getIdInventario()
+                    );
+                }
+
+                inventario.setCantidadDisponible(
+                    inventario.getCantidadDisponible() - diferencia
+                );
+
+                existente.setCantidad(cantidadNueva);
+
+                existente.setCostoTotal(dto.getTotal());
+                existente.setSubtotal(dto.getSubtotal() != null ? dto.getSubtotal() : null);
+
+            } else {
+                if (dto.getCantidad() > inventario.getCantidadDisponible()) {
+                    throw new ValidationException(
+                        "Stock insuficiente para el producto " + inventario.getIdInventario()
+                    );
+                }
+
+                inventario.setCantidadDisponible(
+                    inventario.getCantidadDisponible() - dto.getCantidad()
+                );
+
+                SalidaProductos nuevo = new SalidaProductos();
+                nuevo.setSalida(salida);
+                nuevo.setInventario(inventario);
+                nuevo.setCantidad(dto.getCantidad());
+                nuevo.setCostoTotal(dto.getTotal());
+
+                salida.getProductos().add(nuevo);
+            }
+        }
+
+        BigDecimal totalSalida = salida.getProductos().stream()
+        .map(SalidaProductos::getCostoTotal)
+        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        salida.setTotal(totalSalida);
+
+        salidaRepository.save(salida);
+        return salidaMapper.toResponse(salida);
+    }
 }
