@@ -1,7 +1,7 @@
 package com.progastro.inventario.models.DTO;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -15,7 +15,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SalidaResponseDTO {
     private Long idSalida;
-    private LocalDateTime fecha;
+    private LocalDate fecha;
     private String tipo;
     private String destino;
     private BigDecimal total;

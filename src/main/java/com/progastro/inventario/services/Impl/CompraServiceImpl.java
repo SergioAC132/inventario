@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompraServiceImpl implements CompraServiceBridge {
 
+    private final JdbcTemplate jdbcTemplate;
     private final CompraProductosRepository compraProductosRepository;
     private final CompraRepository compraRepository;
     private final ProveedorRepository proveedorRepository;
@@ -80,6 +82,12 @@ public class CompraServiceImpl implements CompraServiceBridge {
             //compraProductosRepository.save(cp);
         });
 
+        Long usuarioId = (long) 1;
+        try {
+            jdbcTemplate.execute("SET @usuario_id = " + usuarioId);
+        } catch (Exception e) {
+
+        }
         compra.setTotal(totalCompra);
         compra.setProductos(listaProductos);
         compraRepository.save(compra);

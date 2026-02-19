@@ -1,6 +1,6 @@
 package com.progastro.inventario.models.DTO;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 import com.progastro.inventario.models.Enums.DestinoSalida;
@@ -22,7 +22,7 @@ public class SalidaRequestDTO {
     private Long idSalida;
 
     @NotNull
-    private LocalDateTime fecha;
+    private LocalDate fecha;
     private TipoSalida tipo;
     private DestinoSalida destino;
 

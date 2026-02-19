@@ -1,7 +1,7 @@
 package com.progastro.inventario.models.Entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class Salida {
     private Long idSalida;
 
     @Column(name="fecha", nullable= false)
-    private LocalDateTime fecha;
+    private LocalDate fecha;
 
     @Enumerated(EnumType.STRING)
     @Column(name="tipo", nullable = false, length = 15)

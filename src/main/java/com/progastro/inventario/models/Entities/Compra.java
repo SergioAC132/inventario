@@ -1,7 +1,7 @@
 package com.progastro.inventario.models.Entities;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,7 +46,7 @@ public class Compra {
     private Long idCompra;
 
     @Column(nullable= false)
-    private LocalDateTime fecha;
+    private LocalDate fecha;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

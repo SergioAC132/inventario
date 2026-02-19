@@ -22,8 +22,6 @@ import com.progastro.inventario.services.SalidaServiceBridge;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-
-
 @RestController
 @RequestMapping("/api/salidas")
 @RequiredArgsConstructor
