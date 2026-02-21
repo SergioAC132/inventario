@@ -13,7 +13,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +31,7 @@ import com.progastro.inventario.repositories.CompraRepository;
 import com.progastro.inventario.repositories.ProveedorRepository;
 import com.progastro.inventario.services.CompraServiceBridge;
 import com.progastro.inventario.services.InventarioServiceBridge;
+import com.progastro.inventario.services.LoginService;
 import static com.progastro.inventario.util.Constantes.COMPRA_NO_ENCONTRADA_ID;
 
 import jakarta.validation.ValidationException;
@@ -41,9 +41,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompraServiceImpl implements CompraServiceBridge {
 
-    private final JdbcTemplate jdbcTemplate;
     private final CompraProductosRepository compraProductosRepository;
     private final CompraRepository compraRepository;
+    private final LoginService loginService;
     private final ProveedorRepository proveedorRepository;
     private final InventarioServiceBridge inventarioService;
     private final CompraMapper compraMapper;
@@ -82,12 +82,8 @@ public class CompraServiceImpl implements CompraServiceBridge {
             //compraProductosRepository.save(cp);
         });
 
-        Long usuarioId = (long) 1;
-        try {
-            jdbcTemplate.execute("SET @usuario_id = " + usuarioId);
-        } catch (Exception e) {
+        loginService.settearUsuario();
 
-        }
         compra.setTotal(totalCompra);
         compra.setProductos(listaProductos);
         compraRepository.save(compra);

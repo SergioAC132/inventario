@@ -37,7 +37,7 @@ BEGIN
         stock_actual,
         IFNULL(@usuario_id, 0)
     );
-END
+END;
 
 CREATE TRIGGER trg_salida_producto_update
 AFTER UPDATE ON salida_productos
