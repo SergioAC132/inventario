@@ -1,6 +1,9 @@
 package com.progastro.inventario.models.DTO;
 
+import java.time.LocalDate;
 import java.util.List;
+
+import com.progastro.inventario.models.Enums.EstatusCompra;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -16,12 +19,18 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CompraRequestDTO {
     
+    private Long idCompra;
+
     @NotNull
     private Long proveedorId;
+
+    private LocalDate fecha;
 
     @NotBlank
     private String numeroFactura;
 
     @NotEmpty
-    private List<ProductoCompraRequestDTO> productos;
+    private List<CompraProductoRequestDTO> productos;
+
+    private EstatusCompra estatus = EstatusCompra.REGISTRADA;
 }

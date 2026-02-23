@@ -32,8 +32,9 @@ public class Proveedor {
     @Column(nullable = false, length = 13)
     private String rfc;
 
-    @Column(name = "tipo_persona")
-    private int tipoPersona;
+    //1 = FISICA, 0 = MORAL
+    @Column(name = "tipo_persona", nullable= false)
+    private Byte tipoPersona;
 
     @Column(nullable= false)
     private String telefono;

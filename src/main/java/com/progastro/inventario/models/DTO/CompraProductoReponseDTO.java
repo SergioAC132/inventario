@@ -1,5 +1,8 @@
 package com.progastro.inventario.models.DTO;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,11 +14,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CompraProductoReponseDTO {
     
+    private Long idCompraProducto;
     private Long idProducto;
     private String nombreProducto;
     private String marca;
     private String lote;
-    private String fechaCaducidad;
-    private String cantidad;
-    private String costoTotal;
+    private LocalDate fechaCaducidad;
+    private Integer cantidad;
+    private BigDecimal costoTotal;
 }

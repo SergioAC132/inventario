@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,14 +18,18 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(
-    name = "marcas"
+    name = "marcas",
+    uniqueConstraints= @UniqueConstraint(
+            name = "uk_marca_nombre",
+            columnNames= "nombre"
+    )
 )
 public class Marca {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_marca")
-    private Long marca;
+    private Long idMarca;
 
     @Column(nullable = false, length = 70)
     private String nombre;

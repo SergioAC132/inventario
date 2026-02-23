@@ -1,15 +1,23 @@
 package com.progastro.inventario.models.Entities;
 
-import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.progastro.inventario.models.Enums.DestinoSalida;
 import com.progastro.inventario.models.Enums.TipoSalida;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -31,12 +39,20 @@ public class Salida {
     @Column(name = "id_salida")
     private Long idSalida;
 
-    @Column(nullable= false)
-    private LocalDateTime fecha;
+    @Column(name="fecha", nullable= false)
+    private LocalDate fecha;
 
-    @Column(nullable = false, length = 15)
+    @Enumerated(EnumType.STRING)
+    @Column(name="tipo", nullable = false, length = 15)
     private TipoSalida tipo;
 
-    @Column(nullable = false, length = 30)
+    @Enumerated(EnumType.STRING)
+    @Column(name="destino", nullable = false)
     private DestinoSalida destino;
+
+    @Column(name= "total", nullable= false, precision= 12, scale= 2)
+    private BigDecimal total;
+
+    @OneToMany(mappedBy="salida", cascade = CascadeType.ALL, orphanRemoval= true, fetch= FetchType.LAZY)
+    private List<SalidaProductos> productos = new ArrayList<>();
 }

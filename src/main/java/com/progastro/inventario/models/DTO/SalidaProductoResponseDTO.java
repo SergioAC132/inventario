@@ -3,9 +3,6 @@ package com.progastro.inventario.models.DTO;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,24 +12,14 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ProductoCompraRequestDTO {
-    
-    @NotNull
-    private Long productoId;
-
-    @NotBlank
+public class SalidaProductoResponseDTO {
+    private Long idSalidaProducto;
+    private Long idProducto;
+    private String nombreProducto;
+    private String marca;
     private String lote;
-
-    @NotNull
     private LocalDate fechaCaducidad;
-
-    @NotNull
-    @Min(1)
     private Integer cantidad;
-
-    private BigDecimal costoUnitario;
-
-    @NotNull
+    private Integer cantidadRestante;
     private BigDecimal costoTotal;
-    
 }
