@@ -1,0 +1,5 @@
+INSERT IGNORE INTO roles (nombre) VALUES
+('ADMIN'),
+('EDITOR'),
+('CAPTURISTA'),
+('VISOR');

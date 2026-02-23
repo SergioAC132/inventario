@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -39,11 +40,9 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean enabled = true;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-        name = "usuario_roles",
-        joinColumns= @JoinColumn(name = "id_usuario"),
-        inverseJoinColumns= @JoinColumn(name = "id_rol")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(
+        name = "id_rol", nullable = false
     )
-    private Set<Rol> roles = new HashSet<>();
+    private Rol rol;
 }
