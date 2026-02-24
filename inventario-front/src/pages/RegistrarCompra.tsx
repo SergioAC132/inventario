@@ -1,0 +1,518 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { registrarCompra } from '../api/compras';
+import { getProveedores, crearProveedor } from '../api/proveedores';
+import { getProductos, crearProducto } from '../api/productos';
+import { getMarcas } from '../api/marcas';
+import type { CompraRequest, CompraProductoRequest, EstatusCompra } from '../types/compra';
+import type { ProveedorRequest, ProveedorResponse } from '../types/proveedor';
+import type { ProductoResponse } from '../types/producto';
+import type { MarcaResponse } from '../types/marca';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Separator } from '../components/ui/separator';
+import {
+    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from '../components/ui/select';
+import {
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
+} from '../components/ui/dialog';
+import {
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow
+} from '../components/ui/table';
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
+import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
+import MarcaCombobox from '../components/MarcaCombobox';
+import { crearMarca } from '../api/marcas';
+import type { MarcaRequest } from '../api/marcas';
+
+const EMPTY_PRODUCTO_ROW: CompraProductoRequest = {
+    productoId: 0,
+    lote: '',
+    fechaCaducidad: '',
+    cantidad: 1,
+    costoUnitario: undefined,
+    costoTotal: 0,
+};
+
+const RegistrarCompra = () => {
+    const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    // Form principal
+    const [proveedorId, setProveedorId] = useState<number>(0);
+    const [fecha, setFecha] = useState(new Date().toISOString().split('T')[0]);
+    const [numeroFactura, setNumeroFactura] = useState('');
+    const [estatus, setEstatus] = useState<EstatusCompra>('REGISTRADA');
+    const [productos, setProductos] = useState<CompraProductoRequest[]>([{ ...EMPTY_PRODUCTO_ROW }]);
+    const [error, setError] = useState('');
+
+    // Popover proveedor
+    const [proveedorOpen, setProveedorOpen] = useState(false);
+    const [proveedorSearch, setProveedorSearch] = useState('');
+
+    // Popover producto por fila
+    const [productoOpen, setProductoOpen] = useState<number | null>(null);
+
+    // Dialog proveedor
+    const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
+    const [proveedorForm, setProveedorForm] = useState<ProveedorRequest>({
+        nombre: '', rfc: '', tipoPersona: 1, telefono: ''
+    });
+    const [proveedorError, setProveedorError] = useState('');
+
+    // Dialog producto
+    const [productoDialogOpen, setProductoDialogOpen] = useState(false);
+    const [productoRowIndex, setProductoRowIndex] = useState<number>(0);
+    const [productoForm, setProductoForm] = useState({ codigo: '', nombre: '', idMarca: 0 });
+    const [productoError, setProductoError] = useState('');
+
+    // Dialog marca
+    const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
+    const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
+    const [marcaError, setMarcaError] = useState('');
+
+    // Queries
+    const { data: proveedoresData } = useQuery({
+        queryKey: ['proveedores', proveedorSearch],
+        queryFn: () => getProveedores({ nombre: proveedorSearch || undefined, size: 50 }).then(r => r.data.content)
+    });
+
+    const { data: productosData } = useQuery({
+        queryKey: ['productos'],
+        queryFn: () => getProductos({ size: 100 }).then(r => r.data.content)
+    });
+
+    const { data: marcasData } = useQuery({
+        queryKey: ['marcas'],
+        queryFn: () => getMarcas({ size: 100 }).then(r => r.data.content)
+    });
+
+    // Mutations
+    const registrarMutation = useMutation({
+        mutationFn: registrarCompra,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['compras'] });
+            navigate('/compras');
+        },
+        onError: (e: any) => setError(e.response?.data?.message || 'Ocurrió un error')
+    });
+
+    const crearProveedorMutation = useMutation({
+        mutationFn: crearProveedor,
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ['proveedores'] });
+            setProveedorId(res.data.data.idProveedor);
+            setProveedorDialogOpen(false);
+            setProveedorForm({ nombre: '', rfc: '', tipoPersona: 1, telefono: '' });
+            setProveedorError('');
+        },
+        onError: (e: any) => setProveedorError(e.response?.data?.message || 'Ocurrió un error')
+    });
+
+    const crearProductoMutation = useMutation({
+        mutationFn: crearProducto,
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ['productos'] });
+            const nuevos = [...productos];
+            nuevos[productoRowIndex].productoId = res.data.data.idProducto;
+            setProductos(nuevos);
+            setProductoDialogOpen(false);
+            setProductoForm({ codigo: '', nombre: '', idMarca: 0 });
+            setProductoError('');
+        },
+        onError: (e: any) => setProductoError(e.response?.data?.message || 'Ocurrió un error')
+    });
+
+    const crearMarcaMutation = useMutation({
+        mutationFn: crearMarca,
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['marcas'] });
+            setMarcaDialogOpen(false);
+            setMarcaForm({ nombre: '' });
+            setMarcaError('');
+        },
+        onError: (e: any) => setMarcaError(e.response?.data?.message || 'Ocurrió un error')
+    });
+
+    // Helpers
+    const totalCompra = productos.reduce((acc, p) => acc + (p.costoTotal || 0), 0);
+
+    const actualizarProducto = (index: number, campo: keyof CompraProductoRequest, valor: any) => {
+        const nuevos = [...productos];
+        nuevos[index] = { ...nuevos[index], [campo]: valor };
+        setProductos(nuevos);
+    };
+
+    const agregarFila = () => setProductos([...productos, { ...EMPTY_PRODUCTO_ROW }]);
+
+    const eliminarFila = (index: number) => {
+        if (productos.length === 1) return;
+        setProductos(productos.filter((_, i) => i !== index));
+    };
+
+    const handleSubmit = () => {
+        if (!proveedorId) { setError('Selecciona un proveedor'); return; }
+        if (!numeroFactura) { setError('El número de factura es obligatorio'); return; }
+        if (productos.some(p => !p.productoId || !p.lote || !p.fechaCaducidad || !p.costoTotal)) {
+            setError('Completa todos los campos de los productos');
+            return;
+        }
+        setError('');
+        registrarMutation.mutate({ proveedorId, fecha, numeroFactura, estatus, productos });
+    };
+
+    const proveedorSeleccionado = proveedoresData?.find(p => p.idProveedor === proveedorId);
+
+    return (
+        <div className="space-y-6 max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-4">
+                <Button variant="ghost" size="icon" onClick={() => navigate('/compras')}>
+                    <ChevronLeft size={20} />
+                </Button>
+                <h1 className="text-2xl font-semibold text-gray-800">Registrar compra</h1>
+            </div>
+
+            <div className="bg-white border rounded-lg p-6 space-y-6">
+                {/* Datos generales */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label>Proveedor</Label>
+                        <div className="flex gap-2">
+                            <Popover open={proveedorOpen} onOpenChange={setProveedorOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="flex-1 justify-between font-normal">
+                                        {proveedorSeleccionado ? proveedorSeleccionado.nombre : 'Selecciona un proveedor'}
+                                        <ChevronsUpDown size={14} className="text-gray-400" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[300px] p-0">
+                                    <Command>
+                                        <CommandInput
+                                            placeholder="Buscar proveedor..."
+                                            value={proveedorSearch}
+                                            onValueChange={setProveedorSearch}
+                                        />
+                                        <CommandList className="max-h-60 overflow-y-auto" onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
+                                            <CommandEmpty>No se encontraron proveedores</CommandEmpty>
+                                            <CommandGroup>
+                                                {proveedoresData?.map(p => (
+                                                    <CommandItem
+                                                        key={p.idProveedor}
+                                                        value={p.nombre}
+                                                        onSelect={() => { setProveedorId(p.idProveedor); setProveedorOpen(false); }}
+                                                    >
+                                                        <Check size={14} className={proveedorId === p.idProveedor ? 'opacity-100' : 'opacity-0'} />
+                                                        <span>{p.nombre}</span>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <Button variant="outline" size="icon" onClick={() => setProveedorDialogOpen(true)}>
+                                <Plus size={16} />
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Número de factura</Label>
+                        <Input value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)} placeholder="FAC-001" />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Fecha</Label>
+                        <Input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Estatus</Label>
+                        <Select value={estatus} onValueChange={v => setEstatus(v as EstatusCompra)}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="REGISTRADA">Registrada</SelectItem>
+                                <SelectItem value="FACTURADA">Facturada</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Productos */}
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <h2 className="font-medium text-gray-700">Productos</h2>
+                        <div className="flex gap-2">
+                            <Button variant="outline" size="sm" className="gap-2 text-red-500 hover:text-red-700"
+                                onClick={() => setProductos([{ ...EMPTY_PRODUCTO_ROW }])}>
+                                <Trash2 size={14} />
+                                Limpiar
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={agregarFila} className="gap-2">
+                                <Plus size={14} />
+                                Agregar producto
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Producto</TableHead>
+                                    <TableHead>Lote</TableHead>
+                                    <TableHead>Caducidad</TableHead>
+                                    <TableHead>Cantidad</TableHead>
+                                    <TableHead>Costo unitario</TableHead>
+                                    <TableHead>Costo total</TableHead>
+                                    <TableHead></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {productos.map((prod, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell className="min-w-[200px]">
+                                            <div className="flex gap-1">
+                                                <Popover open={productoOpen === index} onOpenChange={open => setProductoOpen(open ? index : null)}>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="outline" className="flex-1 justify-between font-normal text-sm h-8">
+                                                            {productosData?.find(p => p.idProducto === prod.productoId)?.nombre || 'Seleccionar'}
+                                                            <ChevronsUpDown size={12} className="text-gray-400" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-[250px] p-0">
+                                                        <Command>
+                                                            <div className="flex items-center border-b px-2">
+                                                                <CommandInput placeholder="Buscar producto..." className="flex-1 border-0 focus:ring-0" />
+                                                                <button
+                                                                    className="text-gray-400 hover:text-gray-700 p-1 rounded"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setProductoRowIndex(index);
+                                                                        setProductoOpen(null);
+                                                                        setProductoDialogOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <Plus size={14} />
+                                                                </button>
+                                                            </div>
+                                                            <CommandList className="max-h-80 overflow-y-auto" onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
+                                                                <CommandEmpty>No se encontraron productos</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {productosData?.map(p => (
+                                                                        <CommandItem
+                                                                            key={p.idProducto}
+                                                                            value={`${p.nombre} ${p.codigo} ${p.nombreMarca}`}
+                                                                            onSelect={() => { actualizarProducto(index, 'productoId', p.idProducto); setProductoOpen(null); }}
+                                                                        >
+                                                                            <Check size={12} className={prod.productoId === p.idProducto ? 'opacity-100' : 'opacity-0'} />
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-sm">{p.nombre}</span>
+                                                                                <span className="text-xs text-gray-400">{p.codigo} · {p.nombreMarca}</span>
+                                                                            </div>
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input className="h-8 text-sm" value={prod.lote}
+                                                onChange={e => actualizarProducto(index, 'lote', e.target.value)} placeholder="L001" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input className="h-8 text-sm" type="date" value={prod.fechaCaducidad}
+                                                onChange={e => actualizarProducto(index, 'fechaCaducidad', e.target.value)} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input className="h-8 text-sm w-20" type="number" min={1} value={prod.cantidad}
+                                                onChange={e => actualizarProducto(index, 'cantidad', Number(e.target.value))} />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input className="h-8 text-sm w-24" type="number" min={0} value={prod.costoUnitario || ''}
+                                                onChange={e => actualizarProducto(index, 'costoUnitario', e.target.value ? Number(e.target.value) : undefined)}
+                                                placeholder="0.00" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input className="h-8 text-sm w-24" type="number" min={0} value={prod.costoTotal || ''}
+                                                onChange={e => actualizarProducto(index, 'costoTotal', Number(e.target.value))}
+                                                placeholder="0.00" />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600"
+                                                onClick={() => eliminarFila(index)}>
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </div>
+
+                <Separator />
+
+                {/* Total y acciones */}
+                <div className="flex items-center justify-between">
+                    <div>
+                        {error && <p className="text-sm text-red-500">{error}</p>}
+                    </div>
+                    <div className="flex items-center gap-6">
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">Total</p>
+                            <p className="text-2xl font-semibold text-gray-800">
+                                ${totalCompra.toFixed(2)}
+                            </p>
+                        </div>
+                        <Button onClick={handleSubmit} disabled={registrarMutation.isPending} className="px-8">
+                            {registrarMutation.isPending ? 'Registrando...' : 'Registrar compra'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Dialog proveedor */}
+            <Dialog open={proveedorDialogOpen} onOpenChange={setProveedorDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Nuevo proveedor</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2 col-span-2">
+                                <Label>Nombre</Label>
+                                <Input value={proveedorForm.nombre}
+                                    onChange={e => setProveedorForm({ ...proveedorForm, nombre: e.target.value })}
+                                    placeholder="Nombre del proveedor" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>RFC</Label>
+                                <Input value={proveedorForm.rfc}
+                                    onChange={e => setProveedorForm({ ...proveedorForm, rfc: e.target.value })}
+                                    placeholder="RFC123456789" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Tipo persona</Label>
+                                <Select value={String(proveedorForm.tipoPersona)}
+                                    onValueChange={v => setProveedorForm({ ...proveedorForm, tipoPersona: Number(v) })}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="1">Física</SelectItem>
+                                        <SelectItem value="0">Moral</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Teléfono</Label>
+                                <Input value={proveedorForm.telefono}
+                                    onChange={e => setProveedorForm({ ...proveedorForm, telefono: e.target.value })}
+                                    placeholder="1234567890" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Correo</Label>
+                                <Input value={proveedorForm.correo || ''}
+                                    onChange={e => setProveedorForm({ ...proveedorForm, correo: e.target.value })}
+                                    placeholder="correo@ejemplo.com" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Código postal</Label>
+                                <Input type="number" value={proveedorForm.codigoPostal || ''}
+                                    onChange={e => setProveedorForm({ ...proveedorForm, codigoPostal: Number(e.target.value) })}
+                                    placeholder="12345" />
+                            </div>
+                        </div>
+                        {proveedorError && <p className="text-sm text-red-500">{proveedorError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setProveedorDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={() => crearProveedorMutation.mutate(proveedorForm)}
+                            disabled={crearProveedorMutation.isPending}>
+                            {crearProveedorMutation.isPending ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog producto */}
+            <Dialog open={productoDialogOpen} onOpenChange={setProductoDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Nuevo producto</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <Label>Código</Label>
+                            <Input value={productoForm.codigo}
+                                onChange={e => setProductoForm({ ...productoForm, codigo: e.target.value })}
+                                placeholder="PRD001" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Nombre</Label>
+                            <Input value={productoForm.nombre}
+                                onChange={e => setProductoForm({ ...productoForm, nombre: e.target.value })}
+                                placeholder="Nombre del producto" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Marca</Label>
+                            <MarcaCombobox
+                                marcas={marcasData || []}
+                                value={productoForm.idMarca}
+                                onChange={v => setProductoForm({ ...productoForm, idMarca: v })}
+                                onEditarMarca={() => {}}
+                            />
+                        </div>
+                        {productoError && <p className="text-sm text-red-500">{productoError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setProductoDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={() => crearProductoMutation.mutate(productoForm)}
+                            disabled={crearProductoMutation.isPending}>
+                            {crearProductoMutation.isPending ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Dialog marca */}
+            <Dialog open={marcaDialogOpen} onOpenChange={setMarcaDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Nueva marca</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <Label>Nombre</Label>
+                            <Input value={marcaForm.nombre}
+                                onChange={e => setMarcaForm({ ...marcaForm, nombre: e.target.value })}
+                                placeholder="Nombre de la marca" />
+                        </div>
+                        {marcaError && <p className="text-sm text-red-500">{marcaError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMarcaDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={() => crearMarcaMutation.mutate(marcaForm)}
+                            disabled={crearMarcaMutation.isPending}>
+                            {crearMarcaMutation.isPending ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+};
+
+export default RegistrarCompra;

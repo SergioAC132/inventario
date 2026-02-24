@@ -34,6 +34,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/salidas/editar-salida").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.POST, "/api/productos/editar-producto").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.POST, "/api/marcas/editar-marca").hasAnyRole("ADMIN", "EDITOR")
+                .requestMatchers(HttpMethod.POST, "/api/proveedores/editar-proveedor/*").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.PATCH, "/api/inventarios/*/*").hasAnyRole("ADMIN", "EDITOR")
 
                 // ADMIN, EDITOR y CAPTURISTA pueden registrar
@@ -41,6 +42,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/salidas/registrar-salida").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
                 .requestMatchers(HttpMethod.POST, "/api/productos/registrar-producto").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
                 .requestMatchers(HttpMethod.POST, "/api/marcas/registrar-marca").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
+                .requestMatchers(HttpMethod.POST, "/api/marcas/registrar-proveedor").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
 
                 // Todos los roles pueden consultar
                 .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA", "VISOR")

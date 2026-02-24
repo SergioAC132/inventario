@@ -5,6 +5,7 @@ import Layout from '../components/Layout';
 import Login from '../pages/Login'
 import Usuarios from '../pages/Usuarios';
 import Productos from '../pages/Productos';
+import RegistrarCompra from '../pages/RegistrarCompra';
 
 const AppRouter = () => {
     const { isAuthenticated } = useAuth();
@@ -19,6 +20,7 @@ const AppRouter = () => {
                     <Route element={<Layout />}>
                         <Route path="/dashboard" element={<div>Dashboard</div>} />
                         <Route path="/compras" element={<div>Compras</div>} />
+                        <Route path="/compras/registrar" element={<RegistrarCompra />} />
                         <Route path="/salidas" element={<div>Salidas</div>} />
                         <Route path="/productos" element={<Productos />} />
 

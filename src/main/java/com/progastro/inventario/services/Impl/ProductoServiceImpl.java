@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
+import com.progastro.inventario.exceptions.ValidationException;
 import com.progastro.inventario.mappers.ProductoMapper;
 import com.progastro.inventario.models.DTO.ProductoRequestDTO;
 import com.progastro.inventario.models.DTO.ProductoResponseDTO;
@@ -17,7 +18,6 @@ import com.progastro.inventario.repositories.MarcaRepository;
 import com.progastro.inventario.repositories.ProductoRepository;
 import com.progastro.inventario.services.ProductoServiceBridge;
 
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 
 @Service

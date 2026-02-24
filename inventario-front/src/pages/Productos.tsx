@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductos, crearProducto, editarProducto } from '../api/productos';
-import { getMarcas } from '../api/marcas';
+import { getMarcas, crearMarca, editarMarca } from '../api/marcas';
 import type { ProductoRequest, ProductoResponse } from '../types/producto';
 import type { MarcaResponse } from '../types/marca';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
+import type { MarcaRequest } from '../api/marcas';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '../components/ui/table';
@@ -20,7 +21,8 @@ import {
 import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '../components/ui/collapsible';
-import { PackagePlus, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
+import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags } from 'lucide-react';
+import MarcaCombobox from '../components/MarcaCombobox';
 
 const EMPTY_FORM: ProductoRequest = {
     codigo: '',
@@ -39,6 +41,10 @@ const Productos = () => {
     const [form, setForm] = useState<ProductoRequest>(EMPTY_FORM);
     const [error, setError] = useState('');
     const [expandido, setExpandido] = useState<number | null>(null);
+    const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
+    const [editandoMarca, setEditandoMarca] = useState<MarcaResponse | null>(null);
+    const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
+    const [marcaError, setMarcaError] = useState('');
 
     const { data: productosData, isLoading } = useQuery({
         queryKey: ['productos', page, filtroNombre, filtroMarca, filtroCodigo],
@@ -72,11 +78,53 @@ const Productos = () => {
     const crearMutation = useMutation({ mutationFn: crearProducto, ...mutationOpts });
     const editarMutation = useMutation({ mutationFn: editarProducto, ...mutationOpts });
 
+    const marcaMutationOpts = {
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['marcas'] });
+            setMarcaDialogOpen(false);
+            setMarcaForm({ nombre: '' });
+            setEditandoMarca(null);
+            setMarcaError('');
+        },
+        onError: (e: any) => {
+            setMarcaError(e.response?.data?.message || 'Ocurrió un error');
+        }
+    };
+
+    const crearMarcaMutation = useMutation({ mutationFn: crearMarca, ...marcaMutationOpts });
+    const editarMarcaMutation = useMutation({ mutationFn: editarMarca, ...marcaMutationOpts });
+
     const abrirCrear = () => {
         setEditando(null);
         setForm(EMPTY_FORM);
         setError('');
         setDialogOpen(true);
+    };
+
+    const abrirCrearMarca = () => {
+        setEditandoMarca(null);
+        setMarcaForm({ nombre: '' });
+        setMarcaError('');
+        setMarcaDialogOpen(true);
+    };
+
+    const abrirEditarMarca = (marca: MarcaResponse) => {
+        setEditandoMarca(marca);
+        setMarcaForm({ idMarca: marca.idMarca, nombre: marca.nombre });
+        setMarcaError('');
+        setMarcaDialogOpen(true);
+    };
+
+    const handleSubmitMarca = () => {
+        if (!marcaForm.nombre) {
+            setMarcaError('El nombre es obligatorio');
+            return;
+        }
+        if (editandoMarca) {
+            editarMarcaMutation.mutate(marcaForm);
+        } else {
+            crearMarcaMutation.mutate(marcaForm);
+        }
     };
 
     const abrirEditar = (producto: ProductoResponse) => {
@@ -113,10 +161,16 @@ const Productos = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Productos</h1>
-                <Button onClick={abrirCrear} className="gap-2">
-                    <PackagePlus size={16} />
-                    Nuevo producto
-                </Button>
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={abrirCrearMarca} className="gap-2">
+                        <Tags size={16} />
+                        Nueva marca
+                    </Button>
+                    <Button onClick={abrirCrear} className="gap-2">
+                        <PackagePlus size={16} />
+                        Nuevo producto
+                    </Button>
+                </div>
             </div>
 
             {/* Filtros */}
@@ -280,21 +334,12 @@ const Productos = () => {
                         </div>
                         <div className="space-y-2">
                             <Label>Marca</Label>
-                            <Select
-                                value={form.idMarca ? String(form.idMarca) : ''}
-                                onValueChange={v => setForm({ ...form, idMarca: Number(v) })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona una marca" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {marcasData?.map((m: MarcaResponse) => (
-                                        <SelectItem key={m.idMarca} value={String(m.idMarca)}>
-                                            {m.nombre}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <MarcaCombobox
+                                marcas={marcasData || []}
+                                value={form.idMarca}
+                                onChange={v => setForm({ ...form, idMarca: v })}
+                                onEditarMarca={abrirEditarMarca}
+                            />
                         </div>
                         {error && <p className="text-sm text-red-500">{error}</p>}
                     </div>
@@ -302,6 +347,30 @@ const Productos = () => {
                         <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
                         <Button onClick={handleSubmit} disabled={crearMutation.isPending || editarMutation.isPending}>
                             {crearMutation.isPending || editarMutation.isPending ? 'Guardando...' : 'Guardar'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={marcaDialogOpen} onOpenChange={setMarcaDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editandoMarca ? 'Editar marca' : 'Nueva marca'}</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <div className="space-y-2">
+                            <Label>Nombre</Label>
+                            <Input
+                                value={marcaForm.nombre}
+                                onChange={e => setMarcaForm({ ...marcaForm, nombre: e.target.value })}
+                                placeholder="Nombre de la marca"
+                            />
+                        </div>
+                        {marcaError && <p className="text-sm text-red-500">{marcaError}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMarcaDialogOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSubmitMarca} disabled={crearMarcaMutation.isPending || editarMarcaMutation.isPending}>
+                            {crearMarcaMutation.isPending || editarMarcaMutation.isPending ? 'Guardando...' : 'Guardar'}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

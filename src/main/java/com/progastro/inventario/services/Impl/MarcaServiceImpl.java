@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
+import com.progastro.inventario.exceptions.ValidationException;
 import com.progastro.inventario.mappers.MarcaMapper;
 import com.progastro.inventario.models.DTO.MarcaRequestDTO;
 import com.progastro.inventario.models.DTO.MarcaResponseDTO;
@@ -15,7 +16,6 @@ import com.progastro.inventario.repositories.MarcaRepository;
 import com.progastro.inventario.services.MarcaServiceBridge;
 
 import jakarta.transaction.Transactional;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 
 @Service
