@@ -17,13 +17,17 @@ public class ProductoMapper {
         List<InventarioResponseDTO> inventarios = producto.getInventarios()
                                                         .stream()
                                                         .map(this::mapInventario)
-                                                        .toList(); 
+                                                        .toList();
+        Integer stockTotal = inventarios.stream()
+            .mapToInt(InventarioResponseDTO::getCantidadDisponible)
+            .sum();
 
         return new ProductoResponseDTO(
             producto.getIdProducto(),
             producto.getCodigo(),
             producto.getNombre(),
             producto.getMarca().getNombre(),
+            stockTotal,
             inventarios
         );
     }

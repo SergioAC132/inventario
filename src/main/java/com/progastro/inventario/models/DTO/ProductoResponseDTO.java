@@ -21,5 +21,7 @@ public class ProductoResponseDTO {
 
     private String nombreMarca;
 
+    private Integer stockTotal;
+
     private List<InventarioResponseDTO> inventarios;
 }

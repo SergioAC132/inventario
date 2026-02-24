@@ -3,6 +3,7 @@ package com.progastro.inventario.controllers;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,10 +42,10 @@ public class UsuarioController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(true, "Usuario editado correctamente", response));
     }
 
-    @PatchMapping("/{idUsuario}/deshabilitar")
-    public ResponseEntity<ApiResponse<Void>> deshabilitarUsuario(@PathVariable Long idUsuario) {
-        usuarioServiceBridge.deshabilitarUsuario(idUsuario);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Usuario deshabilitado correctamente", null));
+    @PatchMapping("/{idUsuario}/cambio-estado")
+    public ResponseEntity<ApiResponse<Void>> cambiarEstadoUsuario(@PathVariable Long idUsuario) {
+        usuarioServiceBridge.cambiarEstadoUsuario(idUsuario);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Usuario modificado correctamente", null));
     }
 
     @GetMapping("/consultar-usuarios")
@@ -66,5 +67,11 @@ public class UsuarioController {
             result.isLast()
         );
         return ResponseEntity.status(HttpStatus.OK).body(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<ApiResponse<UsuarioResponseDTO>> me(Authentication authentication) {
+        UsuarioResponseDTO response = usuarioServiceBridge.me(authentication.getName());
+        return ResponseEntity.ok(new ApiResponse<>(true, "OK", response));
     }
 }

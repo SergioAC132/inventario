@@ -20,10 +20,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .authorizeHttpRequests(auth -> auth
                 // Solo ADMIN
+                .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/compras/*/cancelar").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.GET, "/api/roles/**").hasRole("ADMIN")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
 
                 // ADMIN y EDITOR pueden editar

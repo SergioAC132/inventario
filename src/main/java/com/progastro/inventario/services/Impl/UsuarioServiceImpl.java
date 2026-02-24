@@ -1,4 +1,4 @@
-package com.progastro.inventario.services;
+package com.progastro.inventario.services.Impl;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,6 +16,7 @@ import com.progastro.inventario.models.Entities.Rol;
 import com.progastro.inventario.models.Entities.Usuario;
 import com.progastro.inventario.repositories.RolRepository;
 import com.progastro.inventario.repositories.UsuarioRepository;
+import com.progastro.inventario.services.UsuarioServiceBridge;
 
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
@@ -78,11 +79,11 @@ public class UsuarioServiceImpl implements UsuarioServiceBridge {
 
     @Override
     @Transactional
-    public void deshabilitarUsuario(Long idUsuario) {
+    public void cambiarEstadoUsuario(Long idUsuario) {
         Usuario usuario = usuarioRepository.findById(idUsuario).orElseThrow(() ->
             new ResourceNotFoundException("Usuario no encontrado con id " + idUsuario)
         );
-        usuario.setEnabled(false);
+        usuario.setEnabled(!usuario.getEnabled());
         usuarioRepository.save(usuario);
     }
 
@@ -92,5 +93,14 @@ public class UsuarioServiceImpl implements UsuarioServiceBridge {
         Pageable pageable = PageRequest.of(page, size, Sort.by("username").ascending());
         return usuarioRepository.findByFiltros(username, rol, enabled, pageable)
                                 .map(usuarioMapper::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO me(String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado")
+        );
+        return usuarioMapper.toResponse(usuario);
     }
 }
