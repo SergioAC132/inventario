@@ -28,6 +28,7 @@ import com.progastro.inventario.repositories.InventarioRepository;
 import com.progastro.inventario.repositories.SalidaProductosRepository;
 import com.progastro.inventario.repositories.SalidaRepository;
 import com.progastro.inventario.services.InventarioServiceBridge;
+import com.progastro.inventario.services.LoginService;
 import com.progastro.inventario.services.SalidaServiceBridge;
 
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
     
     private final InventarioRepository inventarioRepository;
     private final InventarioServiceBridge inventarioService;
+    private final LoginService loginService;
     private final SalidaMapper salidaMapper;
     private final SalidaRepository salidaRepository;
     private final SalidaProductosRepository salidaProductosRepository;
@@ -72,6 +74,8 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
 
             listaProductos.add(sp);
         });
+
+        loginService.settearUsuario();
 
         salida.setTotal(totalSalida);
         salida.setProductos(listaProductos);
@@ -228,6 +232,8 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         BigDecimal totalSalida = salida.getProductos().stream()
         .map(SalidaProductos::getCostoTotal)
         .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        loginService.settearUsuario();
 
         salida.setTotal(totalSalida);
 

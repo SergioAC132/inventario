@@ -39,7 +39,7 @@ public class CompraMapper {
             cp.getInventario().getProducto().getMarca().getNombre(),
             cp.getInventario().getLote(),
             cp.getInventario().getFechaCaducidad(),
-            cp.getInventario().getCantidadDisponible(),
+            cp.getCantidad(),
             cp.getCostoTotal()
         );
 

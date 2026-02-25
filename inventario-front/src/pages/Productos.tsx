@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProductos, crearProducto, editarProducto } from '../api/productos';
 import { getMarcas, crearMarca, editarMarca } from '../api/marcas';
+import { modificarStock } from '../api/inventarios';
 import type { ProductoRequest, ProductoResponse } from '../types/producto';
 import type { MarcaResponse } from '../types/marca';
 import { Button } from '../components/ui/button';
@@ -21,8 +22,9 @@ import {
 import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '../components/ui/collapsible';
-import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags } from 'lucide-react';
+import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags, Plus, Minus } from 'lucide-react';
 import MarcaCombobox from '../components/MarcaCombobox';
+
 
 const EMPTY_FORM: ProductoRequest = {
     codigo: '',
@@ -93,6 +95,12 @@ const Productos = () => {
 
     const crearMarcaMutation = useMutation({ mutationFn: crearMarca, ...marcaMutationOpts });
     const editarMarcaMutation = useMutation({ mutationFn: editarMarca, ...marcaMutationOpts });
+
+    const modificarStockMutation = useMutation({
+        mutationFn: ({ idInventario, modificacion }: { idInventario: number; modificacion: boolean }) =>
+            modificarStock(idInventario, modificacion),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['productos'] })
+    });
 
     const abrirCrear = () => {
         setEditando(null);
@@ -273,7 +281,27 @@ const Productos = () => {
                                                                 <tr key={inv.idInventario} className="border-t border-gray-100">
                                                                     <td className="py-1 font-mono">{inv.lote}</td>
                                                                     <td className="py-1">{inv.fechaCaducidad}</td>
-                                                                    <td className="py-1">{inv.cantidadDisponible}</td>
+                                                                    <td className="py-1">
+                                                                        {inv.active && inv.cantidadDisponible > 0 ? (
+                                                                            <div className="flex items-center gap-2">
+                                                                                <button
+                                                                                    onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: false })}
+                                                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                                >
+                                                                                    <Minus size={14} />
+                                                                                </button>
+                                                                                <span className="w-8 text-center">{inv.cantidadDisponible}</span>
+                                                                                <button
+                                                                                    onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: true })}
+                                                                                    className="text-gray-400 hover:text-green-500 transition-colors"
+                                                                                >
+                                                                                    <Plus size={14} />
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <span className="w-8 text-center">{inv.cantidadDisponible}</span>
+                                                                        )}
+                                                                    </td>
                                                                     <td className="py-1">
                                                                         <Badge variant={inv.active ? 'default' : 'secondary'} className="text-xs">
                                                                             {inv.active ? 'Activo' : 'Inactivo'}

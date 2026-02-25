@@ -1,11 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../context/AuthContext';
+import Compras from '../pages/Compras';
+import EditarCompra from '../pages/EditarCompra';
 import Layout from '../components/Layout';
-import Login from '../pages/Login'
-import Usuarios from '../pages/Usuarios';
+import Login from '../pages/Login';
 import Productos from '../pages/Productos';
+import ProtectedRoute from './ProtectedRoute';
 import RegistrarCompra from '../pages/RegistrarCompra';
+import RegistrarSalida from '../pages/RegistrarSalida';
+import Usuarios from '../pages/Usuarios';
 
 const AppRouter = () => {
     const { isAuthenticated } = useAuth();
@@ -19,9 +22,11 @@ const AppRouter = () => {
                 <Route element={<ProtectedRoute />}>
                     <Route element={<Layout />}>
                         <Route path="/dashboard" element={<div>Dashboard</div>} />
-                        <Route path="/compras" element={<div>Compras</div>} />
+                        <Route path="/compras" element={<Compras />} />
                         <Route path="/compras/registrar" element={<RegistrarCompra />} />
+                        <Route path="/compras/editar/:idCompra" element={<EditarCompra />} />
                         <Route path="/salidas" element={<div>Salidas</div>} />
+                        <Route path="/salidas/registrar" element={<RegistrarSalida />} />
                         <Route path="/productos" element={<Productos />} />
 
 

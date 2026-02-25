@@ -40,7 +40,7 @@ public class CompraProductos {
     )
     private Compra compra;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
         name = "id_inventario",
         nullable= false,

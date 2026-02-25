@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.progastro.inventario.exceptions.ResourceNotFoundException;
+import com.progastro.inventario.exceptions.ValidationException;
 import com.progastro.inventario.mappers.InventarioMapper;
 import com.progastro.inventario.models.DTO.CompraProductoRequestDTO;
 import com.progastro.inventario.models.DTO.InventarioResponseDTO;
@@ -21,6 +22,8 @@ import com.progastro.inventario.models.Entities.SalidaProductos;
 import com.progastro.inventario.repositories.InventarioRepository;
 import com.progastro.inventario.repositories.ProductoRepository;
 import com.progastro.inventario.services.InventarioServiceBridge;
+import com.progastro.inventario.services.LoginService;
+
 import static com.progastro.inventario.util.Constantes.INVENTARIO_NO_ENCONTRADO_ID;
 import static com.progastro.inventario.util.Constantes.PRODUCTO_NO_ENCONTRADO_ID;
 
@@ -32,6 +35,7 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
 
     private final InventarioMapper inventarioMapper;
     private final InventarioRepository inventarioRepository;
+    private final LoginService loginService;
     private final ProductoRepository productoRepository;
 
     @Override
@@ -62,9 +66,19 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
     public void revertirIngresoPorCompra(CompraProductos cp) {
         Inventario inv = cp.getInventario();
 
-        inv.setCantidadDisponible(inv.getCantidadDisponible() - cp.getCantidad());
+        int nuevaCantidad = inv.getCantidadDisponible() - cp.getCantidad();
 
-        if(inv.getCantidadDisponible() <= 0) {
+        if (nuevaCantidad < 0) {
+            throw new ValidationException(
+                "No se puede cancelar la compra porque el inventario del producto '" +
+                inv.getProducto().getNombre() + "' lote '" + inv.getLote() +
+                "' ya no tiene suficiente stock para revertir"
+            );
+        }
+
+        inv.setCantidadDisponible(nuevaCantidad);
+
+        if (nuevaCantidad == 0) {
             inv.setActive(false);
         }
 
@@ -91,7 +105,11 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
             new ResourceNotFoundException(INVENTARIO_NO_ENCONTRADO_ID + idInventario)
         );
 
+        loginService.settearUsuario();
+
         inventario.setCantidadDisponible(modificacion ? inventario.getCantidadDisponible()+1 : inventario.getCantidadDisponible()-1);
+        if (inventario.getCantidadDisponible() == 0) inventario.setActive(false);
+        inventarioRepository.save(inventario);
     }
 
     private Producto obtenerProducto(Long idProducto) {

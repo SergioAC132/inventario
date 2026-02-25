@@ -1,6 +1,7 @@
 package com.progastro.inventario.repositories;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -14,6 +15,9 @@ import com.progastro.inventario.models.Entities.Proveedor;
 
 @Repository
 public interface CompraRepository extends JpaRepository<Compra, Long> {
+
+    @Query("SELECT c FROM Compra c JOIN FETCH c.productos WHERE c.idCompra = :idCompra")
+    Optional<Compra> findByIdWithProductos(@Param("idCompra") Long idCompra);
 
     boolean existsByNumeroFacturaAndProveedor(String numeroFactura, Proveedor proveedor);
 

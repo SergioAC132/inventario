@@ -180,6 +180,8 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
         BigDecimal totalCompra = compra.getProductos().stream().map(CompraProductos::getCostoTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        loginService.settearUsuario();
+
         compra.setTotal(totalCompra);
         compraRepository.save(compra);
         return compraMapper.toResponse(compra);
@@ -192,11 +194,13 @@ public class CompraServiceImpl implements CompraServiceBridge {
     @Override
     @Transactional
     public void cancelarCompra(Long idCompra) {
-        Compra compra = compraRepository.findById(idCompra).orElseThrow(() ->
+        Compra compra = compraRepository.findByIdWithProductos(idCompra).orElseThrow(() ->
             new ResourceNotFoundException((COMPRA_NO_ENCONTRADA_ID + idCompra))
         );
 
         if (compra.getEstatus() == EstatusCompra.CANCELADA) return;
+
+        loginService.settearUsuario();
 
         compra.setEstatus(EstatusCompra.CANCELADA);
         compra.getProductos().forEach(cp -> inventarioService.revertirIngresoPorCompra(cp));
