@@ -24,6 +24,8 @@ import com.progastro.inventario.models.DTO.SalidaResponseDTO;
 import com.progastro.inventario.models.Entities.Inventario;
 import com.progastro.inventario.models.Entities.Salida;
 import com.progastro.inventario.models.Entities.SalidaProductos;
+import com.progastro.inventario.models.Enums.DestinoSalida;
+import com.progastro.inventario.models.Enums.TipoSalida;
 import com.progastro.inventario.repositories.InventarioRepository;
 import com.progastro.inventario.repositories.SalidaProductosRepository;
 import com.progastro.inventario.repositories.SalidaRepository;
@@ -133,10 +135,17 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<SalidaResponseDTO> listarSalidas(String nombreProducto, String destino, String tipo, 
+    public Page<SalidaResponseDTO> listarSalidas(String nombreProducto, String destino, String tipo,
                                                     LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
-        Page<Salida> salidas = salidaRepository.findByFiltros(nombreProducto, destino, tipo, fechaInicio, fechaFin, pageable);
+
+        DestinoSalida destinoEnum = (destino != null && !destino.isBlank())
+            ? DestinoSalida.valueOf(destino.toUpperCase()) : null;
+
+        TipoSalida tipoEnum = (tipo != null && !tipo.isBlank())
+            ? TipoSalida.valueOf(tipo.toUpperCase()) : null;
+
+        Page<Salida> salidas = salidaRepository.findByFiltros(nombreProducto, destinoEnum, tipoEnum, fechaInicio, fechaFin, pageable);
         return salidas.map(salidaMapper::toResponse);
     }
 

@@ -1,13 +1,16 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Compras from '../pages/Compras';
+import Dashboard from '../pages/Dashboard';
 import EditarCompra from '../pages/EditarCompra';
+import EditarSalida from '../pages/EditarSalida';                        
 import Layout from '../components/Layout';
 import Login from '../pages/Login';
 import Productos from '../pages/Productos';
 import ProtectedRoute from './ProtectedRoute';
 import RegistrarCompra from '../pages/RegistrarCompra';
 import RegistrarSalida from '../pages/RegistrarSalida';
+import Salidas from '../pages/Salidas';
 import Usuarios from '../pages/Usuarios';
 
 const AppRouter = () => {
@@ -21,12 +24,13 @@ const AppRouter = () => {
 
                 <Route element={<ProtectedRoute />}>
                     <Route element={<Layout />}>
-                        <Route path="/dashboard" element={<div>Dashboard</div>} />
+                        <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/compras" element={<Compras />} />
                         <Route path="/compras/registrar" element={<RegistrarCompra />} />
                         <Route path="/compras/editar/:idCompra" element={<EditarCompra />} />
-                        <Route path="/salidas" element={<div>Salidas</div>} />
+                        <Route path="/salidas" element={<Salidas />} />
                         <Route path="/salidas/registrar" element={<RegistrarSalida />} />
+                        <Route path="/salidas/editar/:idSalida" element={<EditarSalida />} />
                         <Route path="/productos" element={<Productos />} />
 
 

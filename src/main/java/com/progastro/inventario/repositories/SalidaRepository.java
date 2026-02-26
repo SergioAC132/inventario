@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.progastro.inventario.models.Entities.Salida;
+import com.progastro.inventario.models.Enums.DestinoSalida;
+import com.progastro.inventario.models.Enums.TipoSalida;
 
 @Repository
 public interface SalidaRepository extends JpaRepository<Salida, Long> {
@@ -28,8 +30,8 @@ public interface SalidaRepository extends JpaRepository<Salida, Long> {
     """)
     Page<Salida> findByFiltros(
         @Param("nombreProducto") String nombreProducto,
-        @Param("destino") String destino,
-        @Param("tipo") String tipo,
+        @Param("destino") DestinoSalida destino,
+        @Param("tipo") TipoSalida tipo,
         @Param("fechaInicio") LocalDate fechaInicio,
         @Param("fechaFin") LocalDate fechaFin,
         Pageable pageable

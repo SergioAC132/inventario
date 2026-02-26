@@ -4,20 +4,21 @@ import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard,
     ShoppingCart,
-    BoxesIcon,
+    PackageOpen,
+    Tags,
     Users,
     LogOut,
     Menu,
     X,
-    Hospital
+    Stethoscope
 } from 'lucide-react';
 import { Button } from './ui/button';
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
     { to: '/compras', label: 'Compras', icon: ShoppingCart, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
-    { to: '/salidas', label: 'Salidas', icon: Hospital, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
-    { to: '/productos', label: 'Productos', icon: BoxesIcon, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
+    { to: '/salidas', label: 'Salidas', icon: PackageOpen, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
+    { to: '/productos', label: 'Productos', icon: Tags, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
     { to: '/usuarios', label: 'Usuarios', icon: Users, roles: ['ADMIN'] },
 ];
 
@@ -36,48 +37,71 @@ const Layout = () => {
     );
 
     return (
-        <div className="flex h-screen bg-gray-50">
+        <div className="flex h-screen" style={{ background: 'hsl(150, 20%, 97%)' }}>
             {/* Sidebar */}
-            <aside className={`${sidebarOpen ? 'w-56' : 'w-16'} bg-white border-r flex flex-col transition-all duration-300`}>
-                <div className="flex items-center justify-between p-4 border-b">
-                    {sidebarOpen && <span className="font-semibold text-gray-800">Inventario</span>}
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-gray-500 hover:text-gray-800">
-                        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            <aside
+                className={`${sidebarOpen ? 'w-60' : 'w-16'} flex flex-col transition-all duration-300 shadow-lg`}
+                style={{ background: 'hsl(158, 72%, 14%)' }}
+            >
+                {/* Logo */}
+                <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
+                    {sidebarOpen && (
+                        <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 rounded-md flex items-center justify-center"
+                                style={{ background: 'hsl(150, 60%, 40%)' }}>
+                                <Stethoscope size={15} className="text-white" />
+                            </div>
+                            <span className="font-semibold text-white text-sm tracking-wide">MediStock</span>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="text-white/50 hover:text-white transition-colors p-1 rounded"
+                    >
+                        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
                     </button>
                 </div>
 
-                <nav className="flex-1 p-2 space-y-1">
+                {/* Nav */}
+                <nav className="flex-1 px-2 py-4 space-y-1">
                     {itemsVisibles.map(item => (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             className={({ isActive }) =>
-                                `flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors ${
+                                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
                                     isActive
-                                        ? 'bg-gray-100 text-gray-900 font-medium'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                        ? 'bg-white/15 text-white font-medium'
+                                        : 'text-white/60 hover:bg-white/10 hover:text-white'
                                 }`
                             }
                         >
-                            <item.icon size={18} />
+                            <item.icon size={17} />
                             {sidebarOpen && <span>{item.label}</span>}
                         </NavLink>
                     ))}
                 </nav>
 
-                <div className="p-2 border-t">
+                {/* Footer */}
+                <div className="px-2 py-4 border-t border-white/10">
                     {sidebarOpen && (
-                        <p className="text-xs text-gray-500 px-3 py-1 truncate">{usuario?.username} · {usuario?.rol}</p>
+                        <div className="px-3 py-2 mb-2">
+                            <p className="text-xs text-white/40 truncate">{usuario?.username}</p>
+                            <p className="text-xs text-white/60 font-medium">{usuario?.rol}</p>
+                        </div>
                     )}
-                    <Button variant="ghost" className="w-full justify-start gap-3 text-gray-600" onClick={handleLogout}>
-                        <LogOut size={18} />
+                    <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/60 hover:bg-white/10 hover:text-white transition-all"
+                    >
+                        <LogOut size={17} />
                         {sidebarOpen && <span>Cerrar sesión</span>}
-                    </Button>
+                    </button>
                 </div>
             </aside>
 
             {/* Contenido */}
-            <main className="flex-1 overflow-auto p-6">
+            <main className="flex-1 overflow-auto p-8">
                 <Outlet />
             </main>
         </div>
