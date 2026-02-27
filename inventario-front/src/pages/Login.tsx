@@ -29,27 +29,26 @@ const Login = () => {
     };
 
     return (
-        <div className="min-h-screen flex" style={{ background: 'hsl(158, 72%, 14%)' }}>
+        <div className="min-h-screen flex" style={{ background: 'hsl(210, 60%, 18%)' }}>
             {/* Panel izquierdo */}
             <div className="hidden lg:flex w-1/2 flex-col justify-between p-12"
-                style={{ background: 'hsl(158, 72%, 11%)' }}>
-                <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ background: 'hsl(150, 60%, 40%)' }}>
-                        <Stethoscope size={20} className="text-white" />
-                    </div>
-                    <span className="text-white font-semibold text-lg">MediStock</span>
+                style={{ background: 'hsl(210, 60%, 14%)' }}>
+                <div className="flex items-center gap-2">
+                    <img
+                        src="/logo.png"
+                        alt="Logo"
+                        className="h-auto w-40 object-contain"
+                    />
                 </div>
                 <div className="space-y-4">
                     <h1 className="text-4xl font-bold text-white leading-tight">
                         Control de inventario<br />
-                        <span style={{ color: 'hsl(150, 60%, 55%)' }}>médico eficiente</span>
                     </h1>
                     <p className="text-white/50 text-sm leading-relaxed max-w-sm">
                         Gestiona compras, salidas y stock de insumos médicos desde un solo lugar.
                     </p>
                 </div>
-                <p className="text-white/20 text-xs">© 2026 MediStock</p>
+                <p className="text-white/20 text-xs"></p>
             </div>
 
             {/* Panel derecho */}
@@ -70,7 +69,7 @@ const Login = () => {
                                 placeholder="usuario"
                                 required
                                 className="border-white/10 text-white placeholder:text-white/20"
-                                style={{ background: 'hsl(158, 72%, 18%)' }}
+                                style={{ background: 'hsl(210, 60%, 22%)' }}
                             />
                         </div>
                         <div className="space-y-2">
@@ -82,7 +81,7 @@ const Login = () => {
                                 placeholder="••••••••"
                                 required
                                 className="border-white/10 text-white placeholder:text-white/20"
-                                style={{ background: 'hsl(158, 72%, 18%)' }}
+                                style={{ background: 'hsl(210, 60%, 22%)' }}
                             />
                         </div>
                         {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -90,7 +89,7 @@ const Login = () => {
                             type="submit"
                             className="w-full font-medium"
                             disabled={loading}
-                            style={{ background: 'hsl(150, 60%, 40%)' }}
+                            style={{ background: 'hsl(205, 70%, 50%)' }}
                         >
                             {loading ? 'Ingresando...' : 'Ingresar'}
                         </Button>

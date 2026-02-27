@@ -14,6 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class SalidaProductoResponseDTO {
     private Long idSalidaProducto;
+    private Long idInventario;
     private Long idProducto;
     private String nombreProducto;
     private String marca;

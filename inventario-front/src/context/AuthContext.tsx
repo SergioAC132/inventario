@@ -16,6 +16,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUsuario(JSON.parse(stored));
         }
         setLoading(false);
+
+        const handleBeforeUnload = () => {
+            clearAuthHeader();
+            localStorage.removeItem('auth');
+            localStorage.removeItem('usuario');
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
 
     const login = async (username: string, password: string) => {

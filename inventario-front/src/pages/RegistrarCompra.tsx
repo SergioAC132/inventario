@@ -271,7 +271,6 @@ const RegistrarCompra = () => {
                                     <TableHead>Lote</TableHead>
                                     <TableHead>Caducidad</TableHead>
                                     <TableHead>Cantidad</TableHead>
-                                    <TableHead>Costo unitario</TableHead>
                                     <TableHead>Costo total</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
@@ -338,11 +337,6 @@ const RegistrarCompra = () => {
                                         <TableCell>
                                             <Input className="h-8 text-sm w-20" type="number" min={1} value={prod.cantidad}
                                                 onChange={e => actualizarProducto(index, 'cantidad', Number(e.target.value))} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input className="h-8 text-sm w-24" type="number" min={0} value={prod.costoUnitario || ''}
-                                                onChange={e => actualizarProducto(index, 'costoUnitario', e.target.value ? Number(e.target.value) : undefined)}
-                                                placeholder="0.00" />
                                         </TableCell>
                                         <TableCell>
                                             <Input className="h-8 text-sm w-24" type="number" min={0} value={prod.costoTotal || ''}

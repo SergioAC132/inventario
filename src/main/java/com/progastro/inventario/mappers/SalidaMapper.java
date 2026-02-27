@@ -31,6 +31,7 @@ public class SalidaMapper {
     private SalidaProductoResponseDTO mapProducto(SalidaProductos sp) {
         return new SalidaProductoResponseDTO(
             sp.getIdSalidaProducto(),
+            sp.getInventario().getIdInventario(),
             sp.getInventario().getProducto().getIdProducto(),
             sp.getInventario().getProducto().getNombre(),
             sp.getInventario().getProducto().getMarca().getNombre(),

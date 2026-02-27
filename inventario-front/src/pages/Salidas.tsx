@@ -6,6 +6,7 @@ import type { SalidaResponse } from '../types/salida';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { usePermisos } from '../hooks/usePermisos';
 import { Separator } from '../components/ui/separator';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
@@ -39,6 +40,7 @@ const Salidas = () => {
     const [filtroFechaFin, setFiltroFechaFin] = useState('');
     const [detalleOpen, setDetalleOpen] = useState(false);
     const [salidaSeleccionada, setSalidaSeleccionada] = useState<SalidaResponse | null>(null);
+    const { puedeRegistrar, puedeEditar } = usePermisos();
 
     const { data: salidasData, isLoading } = useQuery({
         queryKey: ['salidas', page, filtroProducto, filtroTipo, filtroDestino, filtroFechaInicio, filtroFechaFin],
@@ -62,10 +64,12 @@ const Salidas = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Salidas</h1>
-                <Button onClick={() => navigate('/salidas/registrar')} className="gap-2">
-                    <Plus size={16} />
-                    Nueva salida
-                </Button>
+                {puedeRegistrar && (
+                    <Button onClick={() => navigate('/salidas/registrar')} className="gap-2">
+                        <Plus size={16} />
+                        Nueva salida
+                    </Button>
+                )}
             </div>
 
             {/* Filtros */}
@@ -146,9 +150,11 @@ const Salidas = () => {
                                 <TableCell>${salida.total?.toFixed(2) ?? '0.00'}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" onClick={() => navigate(`/salidas/editar/${salida.idSalida}`)}>
-                                            <Pencil size={16} />
-                                        </Button>
+                                        {puedeEditar && salida && (
+                                            <Button variant="ghost" size="icon" onClick={() => navigate(`/salidas/editar/${salida.idSalida}`)}>
+                                                <Pencil size={16} />
+                                            </Button>
+                                        )}
                                         <Button variant="ghost" size="icon" onClick={() => abrirDetalle(salida)}>
                                             <Eye size={16} />
                                         </Button>

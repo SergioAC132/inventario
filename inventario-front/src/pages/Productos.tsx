@@ -8,6 +8,7 @@ import type { MarcaResponse } from '../types/marca';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { usePermisos } from '../hooks/usePermisos';
 import { Badge } from '../components/ui/badge';
 import type { MarcaRequest } from '../api/marcas';
 import {
@@ -47,6 +48,7 @@ const Productos = () => {
     const [editandoMarca, setEditandoMarca] = useState<MarcaResponse | null>(null);
     const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
     const [marcaError, setMarcaError] = useState('');
+    const { puedeRegistrar, puedeEditar } = usePermisos();
 
     const { data: productosData, isLoading } = useQuery({
         queryKey: ['productos', page, filtroNombre, filtroMarca, filtroCodigo],
@@ -170,14 +172,18 @@ const Productos = () => {
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Productos</h1>
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={abrirCrearMarca} className="gap-2">
-                        <Tags size={16} />
-                        Nueva marca
-                    </Button>
-                    <Button onClick={abrirCrear} className="gap-2">
-                        <PackagePlus size={16} />
-                        Nuevo producto
-                    </Button>
+                    {puedeRegistrar && (
+                        <Button variant="outline" onClick={abrirCrearMarca} className="gap-2">
+                            <Tags size={16} />
+                            Nueva marca
+                        </Button>
+                    )}
+                    {puedeRegistrar && (
+                        <Button onClick={abrirCrear} className="gap-2">
+                            <PackagePlus size={16} />
+                            Nuevo producto
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -257,9 +263,11 @@ const Productos = () => {
                                             </Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="icon" onClick={() => abrirEditar(producto)}>
-                                                <Pencil size={16} />
-                                            </Button>
+                                            {puedeRegistrar && (
+                                                <Button variant="ghost" size="icon" onClick={() => abrirEditar(producto)}>
+                                                    <Pencil size={16} />
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                     <CollapsibleContent asChild>

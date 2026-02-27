@@ -75,7 +75,7 @@ const EditarSalida = () => {
                 );
                 return {
                     productoId: p.idProducto,
-                    idInventario: p.idSalidaProducto,
+                    idInventario: p.idInventario,
                     cantidad: p.cantidad,
                     total: p.costoTotal,
                 };

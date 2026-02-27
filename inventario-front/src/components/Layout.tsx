@@ -12,7 +12,6 @@ import {
     X,
     Stethoscope
 } from 'lucide-react';
-import { Button } from './ui/button';
 
 const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'EDITOR', 'CAPTURISTA', 'VISOR'] },
@@ -37,21 +36,21 @@ const Layout = () => {
     );
 
     return (
-        <div className="flex h-screen" style={{ background: 'hsl(150, 20%, 97%)' }}>
+        <div className="flex h-screen" style={{ background: 'hsl(210, 20%, 96%)' }}>
             {/* Sidebar */}
             <aside
                 className={`${sidebarOpen ? 'w-60' : 'w-16'} flex flex-col transition-all duration-300 shadow-lg`}
-                style={{ background: 'hsl(158, 72%, 14%)' }}
+                style={{ background: 'hsl(210, 60%, 18%)' }}
             >
                 {/* Logo */}
                 <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
                     {sidebarOpen && (
                         <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-md flex items-center justify-center"
-                                style={{ background: 'hsl(150, 60%, 40%)' }}>
-                                <Stethoscope size={15} className="text-white" />
-                            </div>
-                            <span className="font-semibold text-white text-sm tracking-wide">MediStock</span>
+                            <img
+                                src="/logo.png"
+                                alt="Logo"
+                                className="h-auto w-30 object-contain"
+                            />
                         </div>
                     )}
                     <button

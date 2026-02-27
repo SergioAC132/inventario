@@ -10,6 +10,7 @@ export interface SalidaProductoRequest {
 
 export interface SalidaProductoResponse {
     idSalidaProducto: number;
+    idInventario: number;
     idProducto: number;
     nombreProducto: string;
     marca: string;

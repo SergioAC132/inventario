@@ -8,6 +8,7 @@ import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
 import { formatearFecha } from '../lib/utils';
+import { usePermisos } from '../hooks/usePermisos';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '../components/ui/table';
@@ -18,7 +19,6 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '../components/ui/select';
 import { Plus, Eye, Ban, Pencil } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
 
 const estatusBadge = (estatus: EstatusCompra) => {
     switch (estatus) {
@@ -31,7 +31,6 @@ const estatusBadge = (estatus: EstatusCompra) => {
 const Compras = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
-    const { usuario } = useAuth();
 
     const [page, setPage] = useState(0);
     const [filtroProveedor, setFiltroProveedor] = useState('');
@@ -40,6 +39,7 @@ const Compras = () => {
     const [filtroFechaFin, setFiltroFechaFin] = useState('');
     const [detalleOpen, setDetalleOpen] = useState(false);
     const [compraSeleccionada, setCompraSeleccionada] = useState<CompraResponse | null>(null);
+    const { puedeRegistrar, puedeEditar, puedeCancelar } = usePermisos();
 
     const { data: comprasData, isLoading } = useQuery({
         queryKey: ['compras', page, filtroProveedor, filtroEstatus, filtroFechaInicio, filtroFechaFin],
@@ -70,10 +70,12 @@ const Compras = () => {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Compras</h1>
-                <Button onClick={() => navigate('/compras/registrar')} className="gap-2">
-                    <Plus size={16} />
-                    Nueva compra
-                </Button>
+                {puedeRegistrar && (
+                    <Button onClick={() => navigate('/compras/registrar')} className="gap-2">
+                        <Plus size={16} />
+                        Nueva compra
+                    </Button>
+                )}
             </div>
 
             {/* Filtros */}
@@ -144,7 +146,7 @@ const Compras = () => {
                                 <TableCell>${compra.total.toFixed(2)}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
-                                        {compra.estatus !== 'CANCELADA' && (
+                                        {puedeEditar && compra.estatus !== 'CANCELADA' && (
                                             <Button variant="ghost" size="icon" onClick={() => navigate(`/compras/editar/${compra.idCompra}`)}>
                                                 <Pencil size={16} />
                                             </Button>
@@ -229,7 +231,7 @@ const Compras = () => {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex gap-2">
-                                    {usuario?.rol === 'ADMIN' && compraSeleccionada.estatus !== 'CANCELADA' && (
+                                    {puedeCancelar && compraSeleccionada.estatus !== 'CANCELADA' && (
                                         <Button
                                             variant="destructive"
                                             size="sm"
