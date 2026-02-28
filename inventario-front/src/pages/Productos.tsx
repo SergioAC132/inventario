@@ -18,9 +18,6 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '../components/ui/dialog';
 import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from '../components/ui/select';
-import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '../components/ui/collapsible';
 import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags, Plus, Minus } from 'lucide-react';
@@ -48,7 +45,7 @@ const Productos = () => {
     const [editandoMarca, setEditandoMarca] = useState<MarcaResponse | null>(null);
     const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
     const [marcaError, setMarcaError] = useState('');
-    const { puedeRegistrar, puedeEditar } = usePermisos();
+    const { puedeRegistrar } = usePermisos();
 
     const { data: productosData, isLoading } = useQuery({
         queryKey: ['productos', page, filtroNombre, filtroMarca, filtroCodigo],

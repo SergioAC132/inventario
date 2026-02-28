@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { registrarSalida } from '../api/salidas';
 import { getProductos } from '../api/productos';
 import { getInventariosPorProducto } from '../api/inventarios';
-import type { SalidaRequest, SalidaProductoRequest, TipoSalida, DestinoSalida } from '../types/salida';
+import type { SalidaProductoRequest, TipoSalida, DestinoSalida } from '../types/salida';
 import type { ProductoResponse } from '../types/producto';
 import type { InventarioResponse } from '../types/inventario';
 import { Button } from '../components/ui/button';

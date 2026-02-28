@@ -9,8 +9,7 @@ import {
     Users,
     LogOut,
     Menu,
-    X,
-    Stethoscope
+    X
 } from 'lucide-react';
 
 const navItems = [

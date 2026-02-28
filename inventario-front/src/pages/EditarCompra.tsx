@@ -5,7 +5,7 @@ import { getCompras, editarCompra } from '../api/compras';
 import { getProveedores, crearProveedor } from '../api/proveedores';
 import { getProductos, crearProducto } from '../api/productos';
 import { getMarcas, crearMarca } from '../api/marcas';
-import type { CompraRequest, CompraProductoRequest, EstatusCompra } from '../types/compra';
+import type { CompraProductoRequest, EstatusCompra } from '../types/compra';
 import type { ProveedorRequest } from '../types/proveedor';
 import type { MarcaRequest } from '../api/marcas';
 import { Button } from '../components/ui/button';
