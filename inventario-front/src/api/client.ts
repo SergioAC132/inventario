@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const client = axios.create({
-    baseURL: 'http://localhost:8080/api',
+    baseURL: 'http://192.168.100.65:8080/api',
 });
 
 export const setAuthHeader = (username: string, password: string) => {

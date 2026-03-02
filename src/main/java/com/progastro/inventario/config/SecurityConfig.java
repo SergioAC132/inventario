@@ -22,8 +22,16 @@ public class SecurityConfig {
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
+            .httpBasic(basic -> basic
+            .authenticationEntryPoint((request, response, authException) -> {
+                    response.setContentType("application/json");
+                    response.setStatus(401);
+                    response.getWriter().write("{\"success\":false,\"message\":\"No autorizado\",\"data\":null}");
+                })
+            )      
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/index.html", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.png").permitAll()
+                .requestMatchers("/", "/index.html", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.svg", "/*.webp").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
 
                 // Solo ADMIN
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()

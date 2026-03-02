@@ -15,8 +15,11 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**")
-            .addResourceLocations("file:./front/");
+                .addResourceLocations("file:./front/");
+        registry.addResourceHandler("/")
+                .addResourceLocations("file:./front/index.html");
     }
+
 
     @Bean
     public WebServerFactoryCustomizer<TomcatServletWebServerFactory> spaFallback() {
