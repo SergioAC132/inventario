@@ -2,7 +2,7 @@
 echo Iniciando MediStock...
 
 cd C:\git\inventario
-start "Backend" java -jar "target\inventario-0.0.1-SNAPSHOT.jar"
+start "Backend" cmd /k "cd C:\git\inventario && java -jar target\inventario-0.0.1-SNAPSHOT.jar"
 
 echo Esperando a que el backend inicie...
 timeout /t 30 /nobreak
