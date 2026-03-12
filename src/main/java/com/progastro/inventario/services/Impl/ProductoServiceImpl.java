@@ -70,7 +70,7 @@ public class ProductoServiceImpl implements ProductoServiceBridge {
     @Transactional(readOnly = true)
     public Page<ProductoResponseDTO> listarProductos(String marca, String nombre, String codigo, int page, int size) {
         
-        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
         Page<Producto> productos = productoRepository.findByFiltros(marca, nombre, codigo, pageable);
 
         return productos.map(productoMapper::toResponse);

@@ -45,7 +45,7 @@ const Productos = () => {
     const [editandoMarca, setEditandoMarca] = useState<MarcaResponse | null>(null);
     const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
     const [marcaError, setMarcaError] = useState('');
-    const { puedeRegistrar } = usePermisos();
+    const { puedeRegistrar, puedeEditar } = usePermisos();
 
     const { data: productosData, isLoading } = useQuery({
         queryKey: ['productos', page, filtroNombre, filtroMarca, filtroCodigo],
@@ -259,12 +259,15 @@ const Productos = () => {
                                                 {producto.stockTotal}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell className="text-right">
-                                            {puedeRegistrar && (
-                                                <Button variant="ghost" size="icon" onClick={() => abrirEditar(producto)}>
-                                                    <Pencil size={16} />
-                                                </Button>
-                                            )}
+                                       <TableCell className="text-right">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => puedeEditar && abrirEditar(producto)}
+                                                className={!puedeEditar ? "invisible" : ""}
+                                            >
+                                                <Pencil size={16} />
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                     <CollapsibleContent asChild>
@@ -289,19 +292,23 @@ const Productos = () => {
                                                                     <td className="py-1">
                                                                         {inv.active && inv.cantidadDisponible > 0 ? (
                                                                             <div className="flex items-center gap-2">
-                                                                                <button
-                                                                                    onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: false })}
-                                                                                    className="text-gray-400 hover:text-red-500 transition-colors"
-                                                                                >
-                                                                                    <Minus size={14} />
-                                                                                </button>
-                                                                                <span className="w-8 text-center">{inv.cantidadDisponible}</span>
-                                                                                <button
-                                                                                    onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: true })}
-                                                                                    className="text-gray-400 hover:text-green-500 transition-colors"
-                                                                                >
-                                                                                    <Plus size={14} />
-                                                                                </button>
+                                                                                {puedeEditar && (
+                                                                                    <button
+                                                                                        onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: false })}
+                                                                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                                                                    >
+                                                                                        <Minus size={14}/>
+                                                                                    </button>
+                                                                                )}
+                                                                                    <span className="w-8 text-center">{inv.cantidadDisponible}</span>
+                                                                                {puedeEditar && (
+                                                                                    <button
+                                                                                        onClick={() => modificarStockMutation.mutate({ idInventario: inv.idInventario, modificacion: true })}
+                                                                                        className="text-gray-400 hover:text-green-500 transition-colors"
+                                                                                    >
+                                                                                        <Plus size={14} />
+                                                                                    </button>
+                                                                                )}
                                                                             </div>
                                                                         ) : (
                                                                             <span className="w-8 text-center">{inv.cantidadDisponible}</span>

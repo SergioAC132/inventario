@@ -43,7 +43,7 @@ public class MarcaServiceImpl implements MarcaServiceBridge {
 
     @Override
     public Page<MarcaResponseDTO> listarMarcas(String nombre, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("nombre").ascending());
 
         Page<Marca> marcas = marcaRepository.findByFiltro(nombre, pageable);
 

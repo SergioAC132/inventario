@@ -194,7 +194,6 @@ const RegistrarSalida = () => {
                                     <TableHead>Lote</TableHead>
                                     <TableHead>Disponible</TableHead>
                                     <TableHead>Cantidad</TableHead>
-                                    <TableHead>Subtotal</TableHead>
                                     <TableHead>Total</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
@@ -279,12 +278,6 @@ const RegistrarSalida = () => {
                                                     max={invSeleccionado?.cantidadDisponible}
                                                     value={fila.cantidad}
                                                     onChange={e => actualizarFila(index, 'cantidad', Number(e.target.value))} />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input className="h-8 text-sm w-24" type="number" min={0}
-                                                    value={fila.subtotal || ''}
-                                                    onChange={e => actualizarFila(index, 'subtotal', e.target.value ? Number(e.target.value) : undefined)}
-                                                    placeholder="0.00" />
                                             </TableCell>
                                             <TableCell>
                                                 <Input className="h-8 text-sm w-24" type="number" min={0}

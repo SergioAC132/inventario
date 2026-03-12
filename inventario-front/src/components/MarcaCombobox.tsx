@@ -8,6 +8,7 @@ import {
     Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList
 } from './ui/command';
 import type { MarcaResponse } from '../types/marca';
+import { usePermisos } from '../hooks/usePermisos';
 
 interface Props {
     marcas: MarcaResponse[];
@@ -18,7 +19,7 @@ interface Props {
 
 const MarcaCombobox = ({ marcas, value, onChange, onEditarMarca }: Props) => {
     const [open, setOpen] = useState(false);
-
+    const { puedeEditar } = usePermisos();
     const marcaSeleccionada = marcas.find(m => m.idMarca === value);
 
     return (
@@ -52,16 +53,18 @@ const MarcaCombobox = ({ marcas, value, onChange, onEditarMarca }: Props) => {
                                         />
                                         {marca.nombre}
                                     </div>
-                                    <button
-                                        onClick={e => {
-                                            e.stopPropagation();
-                                            onEditarMarca(marca);
-                                            setOpen(false);
-                                        }}
-                                        className="text-gray-400 hover:text-gray-700 p-1 rounded"
-                                    >
-                                        <Pencil size={12} />
-                                    </button>
+                                    {puedeEditar && (
+                                        <button
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                onEditarMarca(marca);
+                                                setOpen(false);
+                                            }}
+                                            className="text-gray-400 hover:text-gray-700 p-1 rounded"
+                                        >
+                                            <Pencil size={12} />
+                                        </button>
+                                    )}
                                 </CommandItem>
                             ))}
                         </CommandGroup>

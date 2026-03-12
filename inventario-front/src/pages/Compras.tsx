@@ -32,6 +32,7 @@ const Compras = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
+    const [error, setError] = useState('');
     const [page, setPage] = useState(0);
     const [filtroProveedor, setFiltroProveedor] = useState('');
     const [filtroEstatus, setFiltroEstatus] = useState('');
@@ -58,7 +59,8 @@ const Compras = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['compras'] });
             setDetalleOpen(false);
-        }
+        },
+        onError: (e: any) => setError(e.response?.data?.message || 'Ocurrió un error al cancelar la compra')
     });
 
     const abrirDetalle = (compra: CompraResponse) => {
@@ -172,7 +174,7 @@ const Compras = () => {
             )}
 
             {/* Dialog detalle */}
-            <Dialog open={detalleOpen} onOpenChange={setDetalleOpen}>
+            <Dialog open={detalleOpen} onOpenChange={(open) => { setDetalleOpen(open); if (!open) setError(''); }}>
                 <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Detalle de compra</DialogTitle>
@@ -230,12 +232,13 @@ const Compras = () => {
                             <Separator />
 
                             <div className="flex items-center justify-between">
-                                <div className="flex gap-2">
+                                <div className="flex flex-col gap-2 max-w-xs">
+                                    {error && <p className="text-sm text-red-500 leading-tight">{error}</p>}
                                     {puedeCancelar && compraSeleccionada.estatus !== 'CANCELADA' && (
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            className="gap-2"
+                                            className="gap-2 w-fit"
                                             onClick={() => cancelarMutation.mutate(compraSeleccionada.idCompra)}
                                             disabled={cancelarMutation.isPending}
                                         >
