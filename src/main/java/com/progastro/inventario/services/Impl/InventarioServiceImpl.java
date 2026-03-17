@@ -149,6 +149,26 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
     }
 
     @Override
+    @Transactional
+    public void ajustarStockPorEdicionCompra(Inventario inventario, int diferencia) {
+        int nuevaCantidad = inventario.getCantidadDisponible() + diferencia;
+        if (nuevaCantidad < 0) {
+            throw new com.progastro.inventario.exceptions.ValidationException(
+                "No se puede reducir la cantidad de la compra porque el inventario del producto '" +
+                inventario.getProducto().getNombre() + "' lote '" + inventario.getLote() +
+                "' no tiene suficiente stock disponible"
+            );
+        }
+        inventario.setCantidadDisponible(nuevaCantidad);
+        if (nuevaCantidad == 0) {
+            inventario.setActive(false);
+        } else {
+            inventario.setActive(true);
+        }
+        inventarioRepository.save(inventario);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Inventario obtenerInventarioParaSalida(SalidaProductoRequestDTO dto) {
         return inventarioRepository.findById(dto.getIdInventario()).orElseThrow(() ->

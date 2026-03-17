@@ -142,28 +142,30 @@ public class CompraServiceImpl implements CompraServiceBridge {
         compra.setNumeroFactura(request.getNumeroFactura());
         compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());
 
-        Map<Long, CompraProductos> existentes = compra.getProductos().stream()
-                                                                       .collect(Collectors.toMap(
-                                                                        cp -> cp.getInventario()
-                                                                        .getIdInventario(), Function.identity()));
-        
-        for (CompraProductoRequestDTO dto : request.getProductos()) {
-            Inventario inventario = inventarioService.obtenerOCrearInventario(dto);
-            Long key = inventario.getIdInventario();
+        Map<String, CompraProductos> existentesPorKey = compra.getProductos().stream()
+                .collect(Collectors.toMap(
+                    cp -> generarKey(cp.getInventario()), Function.identity()));
 
-            if (existentes.containsKey(key)) {
-                CompraProductos cp = existentes.get(key);
+        for (CompraProductoRequestDTO dto : request.getProductos()) {
+            String dtoKey = dto.getProductoId() + "|" + dto.getLote() + "|" + dto.getFechaCaducidad();
+
+            if (existentesPorKey.containsKey(dtoKey)) {
+                CompraProductos cp = existentesPorKey.get(dtoKey);
+                int diferencia = dto.getCantidad() - cp.getCantidad();
+                if (diferencia != 0) {
+                    inventarioService.ajustarStockPorEdicionCompra(cp.getInventario(), diferencia);
+                }
                 cp.setCantidad(dto.getCantidad());
                 cp.setCostoTotal(dto.getCostoTotal());
                 cp.setSubtotal(dto.getCostoUnitario());
             } else {
+                Inventario inventario = inventarioService.obtenerOCrearInventario(dto);
                 CompraProductos nuevo = new CompraProductos();
                 nuevo.setCompra(compra);
                 nuevo.setInventario(inventario);
                 nuevo.setCantidad(dto.getCantidad());
                 nuevo.setCostoTotal(dto.getCostoTotal());
                 nuevo.setSubtotal(dto.getCostoUnitario());
-
                 compra.getProductos().add(nuevo);
             }
         }

@@ -2,11 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { registrarCompra } from '../api/compras';
-import { getProveedores, crearProveedor } from '../api/proveedores';
-import { getProductos, crearProducto } from '../api/productos';
-import { getMarcas } from '../api/marcas';
+import { getProveedores } from '../api/proveedores';
+import { getProductos } from '../api/productos';
 import type { CompraProductoRequest, EstatusCompra } from '../types/compra';
-import type { ProveedorRequest } from '../types/proveedor';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -15,17 +13,14 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '../components/ui/select';
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
-} from '../components/ui/dialog';
-import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '../components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
-import MarcaCombobox from '../components/MarcaCombobox';
-import { crearMarca } from '../api/marcas';
-import type { MarcaRequest } from '../api/marcas';
+import ProveedorDialog from '../components/ProveedorDialog';
+import ProductoDialog from '../components/ProductoDialog';
+import MarcaDialog from '../components/MarcaDialog';
 
 const EMPTY_PRODUCTO_ROW: CompraProductoRequest = {
     productoId: 0,
@@ -47,6 +42,7 @@ const RegistrarCompra = () => {
     const [estatus, setEstatus] = useState<EstatusCompra>('REGISTRADA');
     const [productos, setProductos] = useState<CompraProductoRequest[]>([{ ...EMPTY_PRODUCTO_ROW }]);
     const [error, setError] = useState('');
+    const [rowErrors, setRowErrors] = useState<Record<number, Set<string>>>({});
 
     // Popover proveedor
     const [proveedorOpen, setProveedorOpen] = useState(false);
@@ -55,23 +51,11 @@ const RegistrarCompra = () => {
     // Popover producto por fila
     const [productoOpen, setProductoOpen] = useState<number | null>(null);
 
-    // Dialog proveedor
+    // Dialogs
     const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
-    const [proveedorForm, setProveedorForm] = useState<ProveedorRequest>({
-        nombre: '', rfc: '', tipoPersona: 1, telefono: ''
-    });
-    const [proveedorError, setProveedorError] = useState('');
-
-    // Dialog producto
     const [productoDialogOpen, setProductoDialogOpen] = useState(false);
     const [productoRowIndex, setProductoRowIndex] = useState<number>(0);
-    const [productoForm, setProductoForm] = useState({ codigo: '', nombre: '', idMarca: 0 });
-    const [productoError, setProductoError] = useState('');
-
-    // Dialog marca
     const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
-    const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
-    const [marcaError, setMarcaError] = useState('');
 
     // Queries
     const { data: proveedoresData } = useQuery({
@@ -84,12 +68,6 @@ const RegistrarCompra = () => {
         queryFn: () => getProductos({ size: 100 }).then(r => r.data.content)
     });
 
-    const { data: marcasData } = useQuery({
-        queryKey: ['marcas'],
-        queryFn: () => getMarcas({ size: 100 }).then(r => r.data.content)
-    });
-
-    // Mutations
     const registrarMutation = useMutation({
         mutationFn: registrarCompra,
         onSuccess: () => {
@@ -99,50 +77,21 @@ const RegistrarCompra = () => {
         onError: (e: any) => setError(e.response?.data?.message || 'Ocurrió un error')
     });
 
-    const crearProveedorMutation = useMutation({
-        mutationFn: crearProveedor,
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['proveedores'] });
-            setProveedorId(res.data.data.idProveedor);
-            setProveedorDialogOpen(false);
-            setProveedorForm({ nombre: '', rfc: '', tipoPersona: 1, telefono: '' });
-            setProveedorError('');
-        },
-        onError: (e: any) => setProveedorError(e.response?.data?.message || 'Ocurrió un error')
-    });
-
-    const crearProductoMutation = useMutation({
-        mutationFn: crearProducto,
-        onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['productos'] });
-            const nuevos = [...productos];
-            nuevos[productoRowIndex].productoId = res.data.data.idProducto;
-            setProductos(nuevos);
-            setProductoDialogOpen(false);
-            setProductoForm({ codigo: '', nombre: '', idMarca: 0 });
-            setProductoError('');
-        },
-        onError: (e: any) => setProductoError(e.response?.data?.message || 'Ocurrió un error')
-    });
-
-    const crearMarcaMutation = useMutation({
-        mutationFn: crearMarca,
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['marcas'] });
-            setMarcaDialogOpen(false);
-            setMarcaForm({ nombre: '' });
-            setMarcaError('');
-        },
-        onError: (e: any) => setMarcaError(e.response?.data?.message || 'Ocurrió un error')
-    });
-
     // Helpers
     const totalCompra = productos.reduce((acc, p) => acc + (p.costoTotal || 0), 0);
+
+    const fieldErr = (i: number, campo: string) =>
+        rowErrors[i]?.has(campo) ? 'border-red-500 focus-visible:ring-red-500' : '';
 
     const actualizarProducto = (index: number, campo: keyof CompraProductoRequest, valor: any) => {
         const nuevos = [...productos];
         nuevos[index] = { ...nuevos[index], [campo]: valor };
         setProductos(nuevos);
+        if (rowErrors[index]?.has(campo)) {
+            const updated = { ...rowErrors, [index]: new Set(rowErrors[index]) };
+            updated[index].delete(campo);
+            setRowErrors(updated);
+        }
     };
 
     const agregarFila = () => setProductos([...productos, { ...EMPTY_PRODUCTO_ROW }]);
@@ -155,10 +104,22 @@ const RegistrarCompra = () => {
     const handleSubmit = () => {
         if (!proveedorId) { setError('Selecciona un proveedor'); return; }
         if (!numeroFactura) { setError('El número de factura es obligatorio'); return; }
-        if (productos.some(p => !p.productoId || !p.lote || !p.fechaCaducidad || !p.costoTotal)) {
+        const newRowErrors: Record<number, Set<string>> = {};
+        productos.forEach((p, i) => {
+            const fields = new Set<string>();
+            if (!p.productoId) fields.add('productoId');
+            if (!p.lote) fields.add('lote');
+            if (!p.fechaCaducidad) fields.add('fechaCaducidad');
+            if (!p.cantidad) fields.add('cantidad');
+            if (!p.costoTotal) fields.add('costoTotal');
+            if (fields.size > 0) newRowErrors[i] = fields;
+        });
+        if (Object.keys(newRowErrors).length > 0) {
+            setRowErrors(newRowErrors);
             setError('Completa todos los campos de los productos');
             return;
         }
+        setRowErrors({});
         setError('');
         registrarMutation.mutate({ proveedorId, fecha, numeroFactura, estatus, productos });
     };
@@ -221,7 +182,7 @@ const RegistrarCompra = () => {
 
                     <div className="space-y-2">
                         <Label>Número de factura</Label>
-                        <Input value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)} placeholder="FAC-001" />
+                        <Input value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)}/>
                     </div>
 
                     <div className="space-y-2">
@@ -280,7 +241,7 @@ const RegistrarCompra = () => {
                                             <div className="flex gap-1">
                                                 <Popover open={productoOpen === index} onOpenChange={open => setProductoOpen(open ? index : null)}>
                                                     <PopoverTrigger asChild>
-                                                        <Button variant="outline" className="flex-1 justify-between font-normal text-sm h-8">
+                                                        <Button variant="outline" className={`flex-1 justify-between font-normal text-sm h-8 ${fieldErr(index, 'productoId')}`}>
                                                             {productosData?.find(p => p.idProducto === prod.productoId)?.nombre || 'Seleccionar'}
                                                             <ChevronsUpDown size={12} className="text-gray-400" />
                                                         </Button>
@@ -325,19 +286,20 @@ const RegistrarCompra = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Input className="h-8 text-sm" value={prod.lote}
-                                                onChange={e => actualizarProducto(index, 'lote', e.target.value)} placeholder="L001" />
+                                            <Input className={`h-8 text-sm ${fieldErr(index, 'lote')}`} value={prod.lote}
+                                                onChange={e => actualizarProducto(index, 'lote', e.target.value)} />
                                         </TableCell>
                                         <TableCell>
-                                            <Input className="h-8 text-sm" type="date" value={prod.fechaCaducidad}
+                                            <Input className={`h-8 text-sm ${fieldErr(index, 'fechaCaducidad')}`} type="date" value={prod.fechaCaducidad}
                                                 onChange={e => actualizarProducto(index, 'fechaCaducidad', e.target.value)} />
                                         </TableCell>
                                         <TableCell>
-                                            <Input className="h-8 text-sm w-20" type="number" min={1} value={prod.cantidad}
-                                                onChange={e => actualizarProducto(index, 'cantidad', Number(e.target.value))} />
+                                            <Input className={`h-8 text-sm w-20 ${fieldErr(index, 'cantidad')}`} type="number" min={1} value={prod.cantidad || ''}
+                                                onChange={e => actualizarProducto(index, 'cantidad', Number(e.target.value))}
+                                                onFocus={e => e.target.select()} placeholder='0' />
                                         </TableCell>
                                         <TableCell>
-                                            <Input className="h-8 text-sm w-24" type="number" min={0} value={prod.costoTotal || ''}
+                                            <Input className={`h-8 text-sm w-24 ${fieldErr(index, 'costoTotal')}`} type="number" min={0} value={prod.costoTotal || ''}
                                                 onChange={e => actualizarProducto(index, 'costoTotal', Number(e.target.value))}
                                                 placeholder="0.00" />
                                         </TableCell>
@@ -375,134 +337,23 @@ const RegistrarCompra = () => {
                 </div>
             </div>
 
-            {/* Dialog proveedor */}
-            <Dialog open={proveedorDialogOpen} onOpenChange={setProveedorDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Nuevo proveedor</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2 col-span-2">
-                                <Label>Nombre</Label>
-                                <Input value={proveedorForm.nombre}
-                                    onChange={e => setProveedorForm({ ...proveedorForm, nombre: e.target.value })}
-                                    placeholder="Nombre del proveedor" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>RFC</Label>
-                                <Input value={proveedorForm.rfc}
-                                    onChange={e => setProveedorForm({ ...proveedorForm, rfc: e.target.value })}
-                                    placeholder="RFC123456789" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Tipo persona</Label>
-                                <Select value={String(proveedorForm.tipoPersona)}
-                                    onValueChange={v => setProveedorForm({ ...proveedorForm, tipoPersona: Number(v) })}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="1">Física</SelectItem>
-                                        <SelectItem value="0">Moral</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Teléfono</Label>
-                                <Input value={proveedorForm.telefono}
-                                    onChange={e => setProveedorForm({ ...proveedorForm, telefono: e.target.value })}
-                                    placeholder="1234567890" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Correo</Label>
-                                <Input value={proveedorForm.correo || ''}
-                                    onChange={e => setProveedorForm({ ...proveedorForm, correo: e.target.value })}
-                                    placeholder="correo@ejemplo.com" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Código postal</Label>
-                                <Input type="number" value={proveedorForm.codigoPostal || ''}
-                                    onChange={e => setProveedorForm({ ...proveedorForm, codigoPostal: Number(e.target.value) })}
-                                    placeholder="12345" />
-                            </div>
-                        </div>
-                        {proveedorError && <p className="text-sm text-red-500">{proveedorError}</p>}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setProveedorDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={() => crearProveedorMutation.mutate(proveedorForm)}
-                            disabled={crearProveedorMutation.isPending}>
-                            {crearProveedorMutation.isPending ? 'Guardando...' : 'Guardar'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <ProveedorDialog
+                open={proveedorDialogOpen}
+                onOpenChange={setProveedorDialogOpen}
+                onCreado={setProveedorId}
+            />
 
-            {/* Dialog producto */}
-            <Dialog open={productoDialogOpen} onOpenChange={setProductoDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Nuevo producto</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label>Código</Label>
-                            <Input value={productoForm.codigo}
-                                onChange={e => setProductoForm({ ...productoForm, codigo: e.target.value })}
-                                placeholder="PRD001" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Nombre</Label>
-                            <Input value={productoForm.nombre}
-                                onChange={e => setProductoForm({ ...productoForm, nombre: e.target.value })}
-                                placeholder="Nombre del producto" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Marca</Label>
-                            <MarcaCombobox
-                                marcas={marcasData || []}
-                                value={productoForm.idMarca}
-                                onChange={v => setProductoForm({ ...productoForm, idMarca: v })}
-                                onEditarMarca={() => {}}
-                            />
-                        </div>
-                        {productoError && <p className="text-sm text-red-500">{productoError}</p>}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setProductoDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={() => crearProductoMutation.mutate(productoForm)}
-                            disabled={crearProductoMutation.isPending}>
-                            {crearProductoMutation.isPending ? 'Guardando...' : 'Guardar'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <ProductoDialog
+                open={productoDialogOpen}
+                onOpenChange={setProductoDialogOpen}
+                onCreado={(idProducto) => {
+                    const nuevos = [...productos];
+                    nuevos[productoRowIndex].productoId = idProducto;
+                    setProductos(nuevos);
+                }}
+            />
 
-            {/* Dialog marca */}
-            <Dialog open={marcaDialogOpen} onOpenChange={setMarcaDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Nueva marca</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 py-2">
-                        <div className="space-y-2">
-                            <Label>Nombre</Label>
-                            <Input value={marcaForm.nombre}
-                                onChange={e => setMarcaForm({ ...marcaForm, nombre: e.target.value })}
-                                placeholder="Nombre de la marca" />
-                        </div>
-                        {marcaError && <p className="text-sm text-red-500">{marcaError}</p>}
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setMarcaDialogOpen(false)}>Cancelar</Button>
-                        <Button onClick={() => crearMarcaMutation.mutate(marcaForm)}
-                            disabled={crearMarcaMutation.isPending}>
-                            {crearMarcaMutation.isPending ? 'Guardando...' : 'Guardar'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <MarcaDialog open={marcaDialogOpen} onOpenChange={setMarcaDialogOpen} />
         </div>
     );
 };

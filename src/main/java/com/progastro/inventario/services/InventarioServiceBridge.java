@@ -27,5 +27,7 @@ public interface InventarioServiceBridge {
 
     void ajustarStockPorEdicionSalida(Inventario inventario, int diferencia);
 
+    void ajustarStockPorEdicionCompra(Inventario inventario, int diferencia);
+
     Inventario obtenerInventarioParaSalida(SalidaProductoRequestDTO dto);
 }
