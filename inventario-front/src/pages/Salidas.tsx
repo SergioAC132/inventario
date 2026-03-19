@@ -61,20 +61,21 @@ const Salidas = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Salidas</h1>
                 {puedeRegistrar && (
                     <Button onClick={() => navigate('/salidas/registrar')} className="gap-2">
                         <Plus size={16} />
-                        Nueva salida
+                        <span className="hidden sm:inline">Nueva salida</span>
+                        <span className="sm:hidden">Nueva</span>
                     </Button>
                 )}
             </div>
 
             {/* Filtros */}
-            <div className="flex gap-3 flex-wrap">
-                <div className="relative w-72">
+            <div className="flex gap-2 flex-wrap">
+                <div className="relative w-full sm:w-72">
                     <Input
                         placeholder="Producto..."
                         value={filtroProducto}
@@ -120,7 +121,7 @@ const Salidas = () => {
             </div>
 
             {/* Tabla */}
-            <div className="border rounded-lg bg-white">
+            <div className="border rounded-lg bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -177,13 +178,13 @@ const Salidas = () => {
 
             {/* Dialog detalle */}
             <Dialog open={detalleOpen} onOpenChange={setDetalleOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Detalle de salida</DialogTitle>
                     </DialogHeader>
                     {salidaSeleccionada && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-gray-500">Fecha</p>
                                     <p className="font-medium">{formatearFecha(salidaSeleccionada.fecha)}</p>
@@ -204,6 +205,7 @@ const Salidas = () => {
 
                             <Separator />
 
+                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -230,6 +232,7 @@ const Salidas = () => {
                                     ))}
                                 </TableBody>
                             </Table>
+                            </div>
                         </div>
                     )}
                 </DialogContent>

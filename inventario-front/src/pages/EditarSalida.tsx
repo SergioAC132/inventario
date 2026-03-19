@@ -158,8 +158,8 @@ const EditarSalida = () => {
                 <h1 className="text-2xl font-semibold text-gray-800">Editar salida</h1>
             </div>
 
-            <div className="bg-white border rounded-lg p-6 space-y-6">
-                <div className="grid grid-cols-3 gap-4">
+            <div className="bg-white border rounded-lg p-4 md:p-6 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="space-y-2">
                         <Label>Fecha</Label>
                         <Input type="date" value={fecha} onChange={e => setFecha(e.target.value)} />
@@ -205,7 +205,7 @@ const EditarSalida = () => {
                         </div>
                     </div>
 
-                    <div className="max-h-72 overflow-y-auto border rounded-md">
+                    <div className="max-h-72 overflow-y-auto overflow-x-auto border rounded-md">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -327,7 +327,7 @@ const EditarSalida = () => {
 
                 <Separator />
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>{error && <p className="text-sm text-red-500">{error}</p>}</div>
                     <div className="flex items-center gap-6">
                         <div className="text-right">

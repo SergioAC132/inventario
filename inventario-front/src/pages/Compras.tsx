@@ -69,24 +69,25 @@ const Compras = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Compras</h1>
                 {puedeRegistrar && (
                     <Button onClick={() => navigate('/compras/registrar')} className="gap-2">
                         <Plus size={16} />
-                        Nueva compra
+                        <span className="hidden sm:inline">Nueva compra</span>
+                        <span className="sm:hidden">Nueva</span>
                     </Button>
                 )}
             </div>
 
             {/* Filtros */}
-            <div className="flex gap-3 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
                 <Input
                     placeholder="Proveedor..."
                     value={filtroProveedor}
                     onChange={e => { setFiltroProveedor(e.target.value); setPage(0); }}
-                    className="max-w-xs"
+                    className="w-full sm:max-w-xs"
                 />
                 <Select value={filtroEstatus} onValueChange={v => { setFiltroEstatus(v === 'TODOS' ? '' : v); setPage(0); }}>
                     <SelectTrigger className="w-40">
@@ -114,7 +115,7 @@ const Compras = () => {
             </div>
 
             {/* Tabla */}
-            <div className="border rounded-lg bg-white">
+            <div className="border rounded-lg bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
@@ -175,13 +176,13 @@ const Compras = () => {
 
             {/* Dialog detalle */}
             <Dialog open={detalleOpen} onOpenChange={(open) => { setDetalleOpen(open); if (!open) setError(''); }}>
-                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Detalle de compra</DialogTitle>
                     </DialogHeader>
                     {compraSeleccionada && (
                         <div className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
                                     <p className="text-gray-500">Proveedor</p>
                                     <p className="font-medium">{compraSeleccionada.proveedor}</p>
@@ -204,6 +205,7 @@ const Compras = () => {
 
                             <Separator />
 
+                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -228,6 +230,7 @@ const Compras = () => {
                                     ))}
                                 </TableBody>
                             </Table>
+                            </div>
 
                             <Separator />
 

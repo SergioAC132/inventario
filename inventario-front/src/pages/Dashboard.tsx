@@ -43,7 +43,7 @@ const Dashboard = () => {
         <div className="space-y-6">
             <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
 
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                 {/* Últimas compras */}
                 <div className="bg-white border rounded-lg p-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -55,6 +55,7 @@ const Dashboard = () => {
                             Ver todas →
                         </button>
                     </div>
+                    <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -87,6 +88,7 @@ const Dashboard = () => {
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 </div>
 
                 {/* Últimas salidas */}
@@ -100,6 +102,7 @@ const Dashboard = () => {
                             Ver todas →
                         </button>
                     </div>
+                    <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -132,6 +135,7 @@ const Dashboard = () => {
                             ))}
                         </TableBody>
                     </Table>
+                    </div>
                 </div>
             </div>
         </div>

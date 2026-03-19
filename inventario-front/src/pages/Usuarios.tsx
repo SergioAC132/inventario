@@ -125,12 +125,12 @@ const Usuarios = () => {
             </div>
 
             {/* Filtros */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 flex-wrap">
                 <Input
                     placeholder="Buscar por username..."
                     value={filtroUsername}
                     onChange={e => { setFiltroUsername(e.target.value); setPage(0); }}
-                    className="max-w-xs"
+                    className="w-full sm:max-w-xs"
                 />
                 <Select value={filtroRol} onValueChange={v => { setFiltroRol(v === 'TODOS' ? '' : v); setPage(0); }}>
                     <SelectTrigger className="w-40">
@@ -162,7 +162,7 @@ const Usuarios = () => {
             </div>
 
             {/* Tabla */}
-            <div className="border rounded-lg bg-white">
+            <div className="border rounded-lg bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>

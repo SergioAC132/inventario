@@ -136,9 +136,9 @@ const RegistrarCompra = () => {
                 <h1 className="text-2xl font-semibold text-gray-800">Registrar compra</h1>
             </div>
 
-            <div className="bg-white border rounded-lg p-6 space-y-6">
+            <div className="bg-white border rounded-lg p-4 md:p-6 space-y-6">
                 {/* Datos generales */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label>Proveedor</Label>
                         <div className="flex gap-2">
@@ -222,7 +222,7 @@ const RegistrarCompra = () => {
                             </Button>
                         </div>
                     </div>
-                    <div className="max-h-80 overflow-y-auto border rounded-md">
+                    <div className="max-h-80 overflow-y-auto overflow-x-auto border rounded-md">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -286,11 +286,11 @@ const RegistrarCompra = () => {
                                             </div>
                                         </TableCell>
                                         <TableCell>
-                                            <Input className={`h-8 text-sm ${fieldErr(index, 'lote')}`} value={prod.lote}
+                                            <Input className={`h-8 text-sm min-w-[130px] ${fieldErr(index, 'lote')}`} value={prod.lote}
                                                 onChange={e => actualizarProducto(index, 'lote', e.target.value)} />
                                         </TableCell>
                                         <TableCell>
-                                            <Input className={`h-8 text-sm ${fieldErr(index, 'fechaCaducidad')}`} type="date" value={prod.fechaCaducidad}
+                                            <Input className={`h-8 text-sm w-36 ${fieldErr(index, 'fechaCaducidad')}`} type="date" value={prod.fechaCaducidad}
                                                 onChange={e => actualizarProducto(index, 'fechaCaducidad', e.target.value)} />
                                         </TableCell>
                                         <TableCell>
@@ -319,7 +319,7 @@ const RegistrarCompra = () => {
                 <Separator />
 
                 {/* Total y acciones */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                         {error && <p className="text-sm text-red-500">{error}</p>}
                     </div>

@@ -165,49 +165,49 @@ const Productos = () => {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Productos</h1>
                 <div className="flex gap-2">
                     {puedeRegistrar && (
                         <Button variant="outline" onClick={abrirCrearMarca} className="gap-2">
                             <Tags size={16} />
-                            Nueva marca
+                            <span className="hidden sm:inline">Nueva marca</span>
                         </Button>
                     )}
                     {puedeRegistrar && (
                         <Button onClick={abrirCrear} className="gap-2">
                             <PackagePlus size={16} />
-                            Nuevo producto
+                            <span className="hidden sm:inline">Nuevo producto</span>
                         </Button>
                     )}
                 </div>
             </div>
 
             {/* Filtros */}
-            <div className="flex gap-3">
+            <div className="flex gap-2 flex-wrap">
                 <Input
                     placeholder="Buscar por nombre..."
                     value={filtroNombre}
                     onChange={e => { setFiltroNombre(e.target.value); setPage(0); }}
-                    className="max-w-xs"
+                    className="w-full sm:max-w-xs"
                 />
                 <Input
                     placeholder="Código..."
                     value={filtroCodigo}
                     onChange={e => { setFiltroCodigo(e.target.value); setPage(0); }}
-                    className="max-w-xs"
+                    className="w-full sm:max-w-xs"
                 />
                 <Input
                     placeholder="Marca..."
                     value={filtroMarca}
                     onChange={e => { setFiltroMarca(e.target.value); setPage(0); }}
-                    className="max-w-xs"
+                    className="w-full sm:max-w-xs"
                 />
             </div>
 
             {/* Tabla */}
-            <div className="border rounded-lg bg-white">
+            <div className="border rounded-lg bg-white overflow-x-auto">
                 <Table>
                     <TableHeader>
                         <TableRow>
