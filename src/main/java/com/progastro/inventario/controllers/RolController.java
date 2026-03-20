@@ -3,9 +3,7 @@ package com.progastro.inventario.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.progastro.inventario.models.DTO.PageResponse;
 import com.progastro.inventario.models.DTO.RolResponseDTO;
-import com.progastro.inventario.models.Entities.Rol;
 import com.progastro.inventario.models.Response.ApiResponse;
 import com.progastro.inventario.services.RolServiceBridge;
 
