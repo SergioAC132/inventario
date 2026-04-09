@@ -178,7 +178,7 @@ const Salidas = () => {
 
             {/* Dialog detalle */}
             <Dialog open={detalleOpen} onOpenChange={setDetalleOpen}>
-                <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="w-[calc(100%-1rem)] sm:max-w-3xl max-h-[85dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Detalle de salida</DialogTitle>
                     </DialogHeader>

@@ -176,7 +176,7 @@ const Compras = () => {
 
             {/* Dialog detalle */}
             <Dialog open={detalleOpen} onOpenChange={(open) => { setDetalleOpen(open); if (!open) setError(''); }}>
-                <DialogContent className="w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="w-[calc(100%-1rem)] sm:max-w-3xl max-h-[85dvh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>Detalle de compra</DialogTitle>
                     </DialogHeader>

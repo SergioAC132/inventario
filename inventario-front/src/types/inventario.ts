@@ -3,5 +3,6 @@ export interface InventarioResponse {
     lote: string;
     cantidadDisponible: number;
     fechaCaducidad: string;
+    costoUnitario: number;
     active: boolean;
 }

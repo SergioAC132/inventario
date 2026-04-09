@@ -5,7 +5,7 @@ export interface CompraProductoRequest {
     lote: string;
     fechaCaducidad: string;
     cantidad: number;
-    costoUnitario?: number;
+    subtotal: number;
     costoTotal: number;
 }
 

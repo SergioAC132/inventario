@@ -30,7 +30,8 @@ public class CompraProductoRequestDTO {
     @Min(1)
     private Integer cantidad;
 
-    private BigDecimal costoUnitario;
+    @NotNull
+    private BigDecimal subtotal;
 
     @NotNull
     private BigDecimal costoTotal;

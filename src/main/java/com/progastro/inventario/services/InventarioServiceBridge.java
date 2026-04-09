@@ -1,5 +1,6 @@
 package com.progastro.inventario.services;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.springframework.data.domain.Page;
@@ -30,4 +31,6 @@ public interface InventarioServiceBridge {
     void ajustarStockPorEdicionCompra(Inventario inventario, int diferencia);
 
     Inventario obtenerInventarioParaSalida(SalidaProductoRequestDTO dto);
+
+    void ajustarCostoUnitarioPorEdicionCompra(Inventario inventario, BigDecimal costoTotal, Integer cantidad);
 }

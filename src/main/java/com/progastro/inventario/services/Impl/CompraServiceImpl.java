@@ -75,8 +75,8 @@ public class CompraServiceImpl implements CompraServiceBridge {
             cp.setCompra(compra);
             cp.setInventario(inventario);
             cp.setCantidad(e.getCantidad());
+            cp.setSubtotal(e.getSubtotal());
             cp.setCostoTotal(e.getCostoTotal());
-            cp.setSubtotal(e.getCostoUnitario() != null ? e.getCostoUnitario() : null);
 
             listaProductos.add(cp);
             //compraProductosRepository.save(cp);
@@ -154,10 +154,11 @@ public class CompraServiceImpl implements CompraServiceBridge {
                 int diferencia = dto.getCantidad() - cp.getCantidad();
                 if (diferencia != 0) {
                     inventarioService.ajustarStockPorEdicionCompra(cp.getInventario(), diferencia);
+                    inventarioService.ajustarCostoUnitarioPorEdicionCompra(cp.getInventario(), dto.getCostoTotal(), dto.getCantidad());
                 }
                 cp.setCantidad(dto.getCantidad());
                 cp.setCostoTotal(dto.getCostoTotal());
-                cp.setSubtotal(dto.getCostoUnitario());
+                cp.setSubtotal(dto.getSubtotal());
             } else {
                 Inventario inventario = inventarioService.obtenerOCrearInventario(dto);
                 CompraProductos nuevo = new CompraProductos();
@@ -165,7 +166,7 @@ public class CompraServiceImpl implements CompraServiceBridge {
                 nuevo.setInventario(inventario);
                 nuevo.setCantidad(dto.getCantidad());
                 nuevo.setCostoTotal(dto.getCostoTotal());
-                nuevo.setSubtotal(dto.getCostoUnitario());
+                nuevo.setSubtotal(dto.getSubtotal());
                 compra.getProductos().add(nuevo);
             }
         }

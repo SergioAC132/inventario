@@ -1,5 +1,6 @@
 package com.progastro.inventario.services.Impl;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -45,10 +46,14 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         Producto producto = obtenerProducto(dto.getProductoId());
 
         Optional<Inventario> existente = inventarioRepository.findByProductoAndLoteAndFechaCaducidad(producto, dto.getLote(), dto.getFechaCaducidad());
+        BigDecimal costoUnitario = dto.getCostoTotal().divide(new java.math.BigDecimal(dto.getCantidad()), 2, java.math.RoundingMode.HALF_UP);
 
         if (existente.isPresent()) {
             Inventario inv = existente.get();
             inv.setCantidadDisponible(inv.getCantidadDisponible() + dto.getCantidad());
+            if (inv.getCostoUnitario().compareTo(costoUnitario) < 0) {
+                inv.setCostoUnitario(costoUnitario);
+            }
             return inventarioRepository.save(inv);
         }
 
@@ -57,7 +62,7 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         nuevo.setLote(dto.getLote());
         nuevo.setCantidadDisponible(dto.getCantidad());
         nuevo.setFechaCaducidad(dto.getFechaCaducidad());
-
+        nuevo.setCostoUnitario(costoUnitario);
         return inventarioRepository.save(nuevo);
     }
     
@@ -165,6 +170,14 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
         } else {
             inventario.setActive(true);
         }
+        inventarioRepository.save(inventario);
+    }
+
+    @Override
+    @Transactional
+    public void ajustarCostoUnitarioPorEdicionCompra(Inventario inventario, BigDecimal costoTotal, Integer cantidad) {
+        BigDecimal nuevoCostoUnitario = costoTotal.divide(new BigDecimal(cantidad), 2, java.math.RoundingMode.HALF_UP);
+        inventario.setCostoUnitario(nuevoCostoUnitario);
         inventarioRepository.save(inventario);
     }
 

@@ -44,15 +44,15 @@ const Layout = () => {
                 style={{ background: 'hsl(210, 60%, 18%)' }}
             >
                 {/* Logo */}
-                <div className="flex items-center justify-between px-4 py-5 border-b border-white/10">
+                <div className="flex items-center gap-4 px-2 py-2 border-b border-white/10">
                     {!desktopCollapsed && (
-                        <img src="/logo.png" alt="Logo" className="h-auto w-30 object-contain" />
+                        <img src="/logo.png" alt="Logo" className="h-16 object-contain" />
                     )}
                     <button
                         onClick={() => setDesktopCollapsed(!desktopCollapsed)}
-                        className="text-white/50 hover:text-white transition-colors p-1 rounded"
+                        className="flex items-center px-3 py-2.5 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-all"
                     >
-                        {desktopCollapsed ? <Menu size={18} /> : <X size={18} />}
+                        {desktopCollapsed ? <Menu size={17} /> : <X size={17} />}
                     </button>
                 </div>
 

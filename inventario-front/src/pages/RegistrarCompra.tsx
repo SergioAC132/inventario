@@ -27,7 +27,7 @@ const EMPTY_PRODUCTO_ROW: CompraProductoRequest = {
     lote: '',
     fechaCaducidad: '',
     cantidad: 1,
-    costoUnitario: undefined,
+    subtotal: 0,
     costoTotal: 0,
 };
 
@@ -78,7 +78,8 @@ const RegistrarCompra = () => {
     });
 
     // Helpers
-    const totalCompra = productos.reduce((acc, p) => acc + (p.costoTotal || 0), 0);
+    const totalSubtotal = productos.reduce((acc, p) => acc + (p.subtotal || 0), 0);
+    const totalConIva = productos.reduce((acc, p) => acc + (p.costoTotal || 0), 0);
 
     const fieldErr = (i: number, campo: string) =>
         rowErrors[i]?.has(campo) ? 'border-red-500 focus-visible:ring-red-500' : '';
@@ -86,6 +87,9 @@ const RegistrarCompra = () => {
     const actualizarProducto = (index: number, campo: keyof CompraProductoRequest, valor: any) => {
         const nuevos = [...productos];
         nuevos[index] = { ...nuevos[index], [campo]: valor };
+        if (campo === 'subtotal') {
+            nuevos[index].costoTotal = parseFloat((Number(valor) * 1.16).toFixed(2));
+        }
         setProductos(nuevos);
         if (rowErrors[index]?.has(campo)) {
             const updated = { ...rowErrors, [index]: new Set(rowErrors[index]) };
@@ -111,7 +115,7 @@ const RegistrarCompra = () => {
             if (!p.lote) fields.add('lote');
             if (!p.fechaCaducidad) fields.add('fechaCaducidad');
             if (!p.cantidad) fields.add('cantidad');
-            if (!p.costoTotal) fields.add('costoTotal');
+            if (!p.subtotal) fields.add('subtotal');
             if (fields.size > 0) newRowErrors[i] = fields;
         });
         if (Object.keys(newRowErrors).length > 0) {
@@ -230,7 +234,7 @@ const RegistrarCompra = () => {
                                     <TableHead>Lote</TableHead>
                                     <TableHead>Caducidad</TableHead>
                                     <TableHead>Cantidad</TableHead>
-                                    <TableHead>Costo total</TableHead>
+                                    <TableHead>Subtotal</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -299,9 +303,9 @@ const RegistrarCompra = () => {
                                                 onFocus={e => e.target.select()} placeholder='0' />
                                         </TableCell>
                                         <TableCell>
-                                            <Input className={`h-8 text-sm w-24 ${fieldErr(index, 'costoTotal')}`} type="number" min={0} value={prod.costoTotal || ''}
-                                                onChange={e => actualizarProducto(index, 'costoTotal', Number(e.target.value))}
-                                                placeholder="0.00" />
+                                            <Input className={`h-8 text-sm w-24 ${fieldErr(index, 'subtotal')}`} type="number" min={0} value={prod.subtotal || ''}
+                                                onChange={e => actualizarProducto(index, 'subtotal', Number(e.target.value))}
+                                                onFocus={e => e.target.select()} placeholder="0.00" />
                                         </TableCell>
                                         <TableCell>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600"
@@ -325,9 +329,15 @@ const RegistrarCompra = () => {
                     </div>
                     <div className="flex items-center gap-6">
                         <div className="text-right">
-                            <p className="text-sm text-gray-500">Total</p>
+                            <p className="text-xs text-gray-500">Subtotal</p>
+                            <p className="text-lg font-semibold text-gray-600">
+                                ${totalSubtotal.toFixed(2)}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">Total (IVA 16%)</p>
                             <p className="text-2xl font-semibold text-gray-800">
-                                ${totalCompra.toFixed(2)}
+                                ${totalConIva.toFixed(2)}
                             </p>
                         </div>
                         <Button onClick={handleSubmit} disabled={registrarMutation.isPending} className="px-8">

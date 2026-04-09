@@ -1,5 +1,6 @@
 package com.progastro.inventario.models.Entities;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
@@ -47,6 +48,9 @@ public class Inventario {
 
     @Column(name = "cantidad_disponible", nullable= false)
     private Integer cantidadDisponible;
+
+    @Column(name = "costo_unitario", nullable= false, precision = 12, scale = 2)
+    private BigDecimal costoUnitario;
 
     @Column(name = "active", nullable= false)
     private Boolean active = true;
