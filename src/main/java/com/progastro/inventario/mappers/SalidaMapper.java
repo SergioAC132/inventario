@@ -39,6 +39,7 @@ public class SalidaMapper {
             sp.getInventario().getFechaCaducidad(),
             sp.getCantidad(),
             sp.getInventario().getCantidadDisponible(),
+            sp.getInventario().getCostoUnitario(),
             sp.getCostoTotal()
         );
     }

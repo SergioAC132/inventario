@@ -14,6 +14,7 @@ public class InventarioMapper {
             inventario.getLote(),
             inventario.getCantidadDisponible(),
             inventario.getFechaCaducidad(),
+            inventario.getCostoUnitario(),
             inventario.getActive()
         );
     }

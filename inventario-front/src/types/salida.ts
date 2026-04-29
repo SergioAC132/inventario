@@ -4,7 +4,6 @@ export type DestinoSalida = 'PARTICULAR' | 'ASEGURADORA';
 export interface SalidaProductoRequest {
     idInventario: number;
     cantidad: number;
-    subtotal?: number;
     total?: number;
 }
 
@@ -18,6 +17,7 @@ export interface SalidaProductoResponse {
     fechaCaducidad: string;
     cantidad: number;
     cantidadRestante: number;
+    costoUnitarioCompra: number;
     costoTotal: number;
 }
 

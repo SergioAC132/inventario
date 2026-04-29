@@ -25,7 +25,6 @@ interface FilaSalida {
     productoId: number;
     idInventario: number;
     cantidad: number;
-    subtotal?: number;
     total?: number;
 }
 
@@ -132,6 +131,18 @@ const EditarSalida = () => {
     };
 
     const totalSalida = filas.reduce((acc, f) => acc + (f.total || 0), 0);
+    const totalConIva = parseFloat((totalSalida * 1.16).toFixed(2));
+
+    const calcularUtilidad = (fila: FilaSalida, index: number): number | null => {
+        const inv = (inventariosPorFila[index] || []).find(i => i.idInventario === fila.idInventario);
+        if (!inv || fila.total === undefined) return null;
+        return fila.total - inv.costoUnitario * fila.cantidad;
+    };
+
+    const utilidadTotal = filas.reduce((acc, f, i) => {
+        const u = calcularUtilidad(f, i);
+        return u !== null ? acc + u : acc;
+    }, 0);
 
     const handleSubmit = () => {
         if (!fecha) { setError('La fecha es obligatoria'); return; }
@@ -143,7 +154,6 @@ const EditarSalida = () => {
         const productos: SalidaProductoRequest[] = filas.map(f => ({
             idInventario: f.idInventario,
             cantidad: f.cantidad,
-            subtotal: f.subtotal,
             total: f.total,
         }));
         editarMutation.mutate({ idSalida: Number(idSalida), fecha, tipo, destino, productos });
@@ -212,9 +222,10 @@ const EditarSalida = () => {
                                     <TableHead>Producto</TableHead>
                                     <TableHead>Lote</TableHead>
                                     <TableHead>Disponible</TableHead>
+                                    <TableHead>Costo unit.</TableHead>
                                     <TableHead>Cantidad</TableHead>
-                                    <TableHead>Subtotal</TableHead>
-                                    <TableHead>Total</TableHead>
+                                    <TableHead>Total venta</TableHead>
+                                    <TableHead>Utilidad</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -293,6 +304,9 @@ const EditarSalida = () => {
                                             <TableCell className="text-sm text-gray-500">
                                                 {invSeleccionado ? invSeleccionado.cantidadDisponible : '-'}
                                             </TableCell>
+                                            <TableCell className="text-sm text-gray-500">
+                                                {invSeleccionado ? `$${invSeleccionado.costoUnitario.toFixed(2)}` : '-'}
+                                            </TableCell>
                                             <TableCell>
                                                 <Input className="h-8 text-sm w-20" type="number" min={1}
                                                     max={invSeleccionado?.cantidadDisponible}
@@ -301,15 +315,16 @@ const EditarSalida = () => {
                                             </TableCell>
                                             <TableCell>
                                                 <Input className="h-8 text-sm w-24" type="number" min={0}
-                                                    value={fila.subtotal || ''}
-                                                    onChange={e => actualizarFila(index, 'subtotal', e.target.value ? Number(e.target.value) : undefined)}
-                                                    placeholder="0.00" />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input className="h-8 text-sm w-24" type="number" min={0}
                                                     value={fila.total || ''}
                                                     onChange={e => actualizarFila(index, 'total', e.target.value ? Number(e.target.value) : undefined)}
                                                     placeholder="0.00" />
+                                            </TableCell>
+                                            <TableCell className="text-sm font-medium">
+                                                {(() => {
+                                                    const u = calcularUtilidad(fila, index);
+                                                    if (u === null) return <span className="text-gray-400">-</span>;
+                                                    return <span className={u >= 0 ? 'text-green-600' : 'text-red-500'}>${u.toFixed(2)}</span>;
+                                                })()}
                                             </TableCell>
                                             <TableCell>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-red-400 hover:text-red-600"
@@ -331,8 +346,18 @@ const EditarSalida = () => {
                     <div>{error && <p className="text-sm text-red-500">{error}</p>}</div>
                     <div className="flex items-center gap-6">
                         <div className="text-right">
-                            <p className="text-sm text-gray-500">Total</p>
-                            <p className="text-2xl font-semibold text-gray-800">${totalSalida.toFixed(2)}</p>
+                            <p className="text-xs text-gray-500">Utilidad</p>
+                            <p className={`text-lg font-semibold ${utilidadTotal >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                ${utilidadTotal.toFixed(2)}
+                            </p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-xs text-gray-500">Subtotal</p>
+                            <p className="text-lg font-semibold text-gray-600">${totalSalida.toFixed(2)}</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500">Total (IVA 16%)</p>
+                            <p className="text-2xl font-semibold text-gray-800">${totalConIva.toFixed(2)}</p>
                         </div>
                         <Button onClick={handleSubmit} disabled={editarMutation.isPending} className="px-8">
                             {editarMutation.isPending ? 'Guardando...' : 'Guardar cambios'}

@@ -198,7 +198,7 @@ const Salidas = () => {
                                     <p className="font-medium">{salidaSeleccionada.destino}</p>
                                 </div>
                                 <div>
-                                    <p className="text-gray-500">Total</p>
+                                    <p className="text-gray-500">Total (IVA 16%)</p>
                                     <p className="font-medium">${salidaSeleccionada.total?.toFixed(2) ?? '0.00'}</p>
                                 </div>
                             </div>
@@ -215,24 +215,60 @@ const Salidas = () => {
                                         <TableHead>Caducidad</TableHead>
                                         <TableHead>Cantidad</TableHead>
                                         <TableHead>Restante</TableHead>
-                                        <TableHead>Total</TableHead>
+                                        <TableHead>Total venta</TableHead>
+                                        <TableHead>Utilidad</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {salidaSeleccionada.productos.map(p => (
-                                        <TableRow key={p.idSalidaProducto}>
-                                            <TableCell>{p.nombreProducto}</TableCell>
-                                            <TableCell>{p.marca}</TableCell>
-                                            <TableCell className="font-mono text-sm">{p.lote}</TableCell>
-                                            <TableCell>{formatearFecha(p.fechaCaducidad)}</TableCell>
-                                            <TableCell>{p.cantidad}</TableCell>
-                                            <TableCell>{p.cantidadRestante}</TableCell>
-                                            <TableCell>${p.costoTotal?.toFixed(2) ?? '0.00'}</TableCell>
-                                        </TableRow>
-                                    ))}
+                                    {salidaSeleccionada.productos.map(p => {
+                                        const utilidad = p.costoTotal != null && p.costoUnitarioCompra != null
+                                            ? p.costoTotal - p.costoUnitarioCompra * p.cantidad
+                                            : null;
+                                        return (
+                                            <TableRow key={p.idSalidaProducto}>
+                                                <TableCell>{p.nombreProducto}</TableCell>
+                                                <TableCell>{p.marca}</TableCell>
+                                                <TableCell className="font-mono text-sm">{p.lote}</TableCell>
+                                                <TableCell>{formatearFecha(p.fechaCaducidad)}</TableCell>
+                                                <TableCell>{p.cantidad}</TableCell>
+                                                <TableCell>{p.cantidadRestante}</TableCell>
+                                                <TableCell>${p.costoTotal?.toFixed(2) ?? '0.00'}</TableCell>
+                                                <TableCell>
+                                                    {utilidad != null
+                                                        ? <span className={utilidad >= 0 ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>${utilidad.toFixed(2)}</span>
+                                                        : <span className="text-gray-400">-</span>}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
                                 </TableBody>
                             </Table>
                             </div>
+                            {(() => {
+                                const subtotal = salidaSeleccionada.productos.reduce((acc, p) => acc + (p.costoTotal ?? 0), 0);
+                                const utilidadTotal = salidaSeleccionada.productos.reduce((acc, p) => {
+                                    if (p.costoTotal == null || p.costoUnitarioCompra == null) return acc;
+                                    return acc + (p.costoTotal - p.costoUnitarioCompra * p.cantidad);
+                                }, 0);
+                                return (
+                                    <div className="flex justify-end gap-6 pt-2 text-sm">
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-500">Utilidad total</p>
+                                            <p className={`text-lg font-semibold ${utilidadTotal >= 0 ? 'text-green-600' : 'text-red-500'}`}>
+                                                ${utilidadTotal.toFixed(2)}
+                                            </p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-xs text-gray-500">Subtotal</p>
+                                            <p className="text-lg font-semibold text-gray-600">${subtotal.toFixed(2)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm text-gray-500">Total (IVA 16%)</p>
+                                            <p className="text-2xl font-semibold text-gray-800">${(subtotal * 1.16).toFixed(2)}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </div>
                     )}
                 </DialogContent>

@@ -22,5 +22,6 @@ public class SalidaProductoResponseDTO {
     private LocalDate fechaCaducidad;
     private Integer cantidad;
     private Integer cantidadRestante;
+    private BigDecimal costoUnitarioCompra;
     private BigDecimal costoTotal;
 }

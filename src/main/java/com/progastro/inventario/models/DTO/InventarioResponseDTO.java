@@ -1,5 +1,6 @@
 package com.progastro.inventario.models.DTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import lombok.AllArgsConstructor;
@@ -14,5 +15,6 @@ public class InventarioResponseDTO {
     private String lote;
     private Integer cantidadDisponible;
     private LocalDate fechaCaducidad;
+    private BigDecimal costoUnitario;
     private Boolean active;
 }
