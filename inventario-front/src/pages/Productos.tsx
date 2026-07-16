@@ -20,7 +20,7 @@ import {
 import {
     Collapsible, CollapsibleContent, CollapsibleTrigger
 } from '../components/ui/collapsible';
-import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags, Plus, Minus } from 'lucide-react';
+import { PackagePlus, Pencil, ChevronDown, ChevronRight, Tags, Plus, Minus, FileSpreadsheet } from 'lucide-react';
 import MarcaCombobox from '../components/MarcaCombobox';
 
 
@@ -46,6 +46,7 @@ const Productos = () => {
     const [marcaForm, setMarcaForm] = useState<MarcaRequest>({ nombre: '' });
     const [marcaError, setMarcaError] = useState('');
     const { puedeRegistrar, puedeEditar } = usePermisos();
+    const [exportando, setExportando] = useState(false);
 
     const { data: productosData, isLoading } = useQuery({
         queryKey: ['productos', page, filtroNombre, filtroMarca, filtroCodigo],
@@ -164,11 +165,123 @@ const Productos = () => {
         return 'default';
     };
 
+    const exportarInventario = async () => {
+        setExportando(true);
+        try {
+            const ExcelJS = (await import('exceljs')).default;
+            type Fila = {
+                codigo: string;
+                producto: string;
+                marca: string;
+                lote: string;
+                fechaCaducidad: string;
+                cantidadDisponible: number;
+                nuevoProducto: boolean;
+            };
+            const filas: Fila[] = [];
+
+            let pagina = 0;
+            let totalPaginas = 1;
+            while (pagina < totalPaginas) {
+                const { data } = await getProductos({ page: pagina, size: 200 });
+                totalPaginas = data.totalPages;
+                data.content.forEach(producto => {
+                    let primero = true;
+                    producto.inventarios
+                        .filter(inv => inv.active && inv.cantidadDisponible > 0)
+                        .forEach(inv => {
+                            filas.push({
+                                codigo: producto.codigo,
+                                producto: producto.nombre,
+                                marca: producto.nombreMarca,
+                                lote: inv.lote,
+                                fechaCaducidad: inv.fechaCaducidad,
+                                cantidadDisponible: inv.cantidadDisponible,
+                                nuevoProducto: primero,
+                            });
+                            primero = false;
+                        });
+                });
+                pagina++;
+            }
+
+            const libro = new ExcelJS.Workbook();
+            const hoja = libro.addWorksheet('Inventario');
+
+            const columnas = [
+                { header: 'Código', key: 'codigo', width: 14 },
+                { header: 'Producto', key: 'producto', width: 32 },
+                { header: 'Marca', key: 'marca', width: 20 },
+                { header: 'Lote', key: 'lote', width: 14 },
+                { header: 'Fecha caducidad', key: 'fechaCaducidad', width: 16 },
+                { header: 'Cantidad disponible', key: 'cantidadDisponible', width: 18 },
+            ];
+            const numColumnas = columnas.length;
+            hoja.columns = columnas;
+
+            const horaCdmx = new Intl.DateTimeFormat('es-MX', {
+                timeZone: 'America/Mexico_City',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false,
+            }).format(new Date());
+
+            hoja.spliceRows(1, 0, [`Generado a las ${horaCdmx} (hora de Ciudad de México)`]);
+            hoja.mergeCells(1, 1, 1, numColumnas);
+            const filaTitulo = hoja.getRow(1);
+            filaTitulo.getCell(1).font = { italic: true, color: { argb: 'FF666666' } };
+
+            const finaThin = { style: 'thin' as const, color: { argb: 'FFB0B0B0' } };
+            const gruesa = { style: 'medium' as const, color: { argb: 'FF000000' } };
+
+            const headerRow = hoja.getRow(2);
+            for (let col = 1; col <= numColumnas; col++) {
+                const cell = headerRow.getCell(col);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F5496' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                cell.border = { top: gruesa, left: finaThin, right: finaThin, bottom: gruesa };
+            }
+
+            filas.forEach(fila => {
+                const row = hoja.addRow(fila);
+                row.eachCell(cell => {
+                    cell.border = {
+                        top: fila.nuevoProducto ? gruesa : finaThin,
+                        left: finaThin,
+                        right: finaThin,
+                        bottom: finaThin,
+                    };
+                });
+            });
+
+            const ultimaFila = hoja.rowCount;
+            hoja.getRow(ultimaFila).eachCell(cell => {
+                cell.border = { ...cell.border, bottom: gruesa };
+            });
+
+            const buffer = await libro.xlsx.writeBuffer();
+            const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `inventario_${new Date().toISOString().slice(0, 10)}.xlsx`;
+            link.click();
+            URL.revokeObjectURL(url);
+        } finally {
+            setExportando(false);
+        }
+    };
+
     return (
         <div className="space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Productos</h1>
                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={exportarInventario} disabled={exportando} className="gap-2">
+                        <FileSpreadsheet size={16} />
+                        <span className="hidden sm:inline">{exportando ? 'Exportando...' : 'Exportar inventario'}</span>
+                    </Button>
                     {puedeRegistrar && (
                         <Button variant="outline" onClick={abrirCrearMarca} className="gap-2">
                             <Tags size={16} />

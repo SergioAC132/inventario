@@ -19,6 +19,7 @@ public class CompraResponseDTO {
     private Long idCompra;
     private LocalDate fecha;
     private String proveedor;
+    private String doctor;
     private String numeroFactura;
     private EstatusCompra estatus;
     private BigDecimal total;

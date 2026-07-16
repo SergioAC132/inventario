@@ -60,7 +60,7 @@ const Dashboard = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Fecha</TableHead>
-                                <TableHead>Proveedor</TableHead>
+                                <TableHead>Proveedor / Doctor</TableHead>
                                 <TableHead>Estatus</TableHead>
                                 <TableHead>Total</TableHead>
                             </TableRow>
@@ -79,7 +79,7 @@ const Dashboard = () => {
                                     onClick={() => navigate(`/compras/editar/${compra.idCompra}`)}
                                 >
                                     <TableCell>{formatearFecha(compra.fecha)}</TableCell>
-                                    <TableCell className="max-w-[120px] truncate">{compra.proveedor}</TableCell>
+                                    <TableCell className="max-w-[120px] truncate">{compra.doctor || compra.proveedor}</TableCell>
                                     <TableCell>
                                         <Badge variant={estatusBadge(compra.estatus)}>{compra.estatus}</Badge>
                                     </TableCell>

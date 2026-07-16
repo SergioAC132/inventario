@@ -23,11 +23,13 @@ import com.progastro.inventario.models.DTO.CompraRequestDTO;
 import com.progastro.inventario.models.DTO.CompraResponseDTO;
 import com.progastro.inventario.models.Entities.Compra;
 import com.progastro.inventario.models.Entities.CompraProductos;
+import com.progastro.inventario.models.Entities.Doctor;
 import com.progastro.inventario.models.Entities.Inventario;
 import com.progastro.inventario.models.Entities.Proveedor;
 import com.progastro.inventario.models.Enums.EstatusCompra;
 import com.progastro.inventario.repositories.CompraProductosRepository;
 import com.progastro.inventario.repositories.CompraRepository;
+import com.progastro.inventario.repositories.DoctorRepository;
 import com.progastro.inventario.repositories.ProveedorRepository;
 import com.progastro.inventario.services.CompraServiceBridge;
 import com.progastro.inventario.services.InventarioServiceBridge;
@@ -43,6 +45,7 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
     private final CompraProductosRepository compraProductosRepository;
     private final CompraRepository compraRepository;
+    private final DoctorRepository doctorRepository;
     private final LoginService loginService;
     private final ProveedorRepository proveedorRepository;
     private final InventarioServiceBridge inventarioService;
@@ -53,16 +56,30 @@ public class CompraServiceImpl implements CompraServiceBridge {
     public CompraResponseDTO registrarCompra(CompraRequestDTO request) {
 
         List<CompraProductos> listaProductos = new ArrayList<>();
-        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), null);
-        
+        Proveedor proveedor = null;
+        Doctor doctor = null;
+
+        if (request.getProveedorId() != null) {
+            if (request.getNumeroFactura() == null || request.getNumeroFactura().isBlank()) {
+                throw new ValidationException("El número de factura es obligatorio");
+            }
+            proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), null);
+        } else if (request.getDoctorId() != null) {
+            doctor = validarDatosDoctor(request.getDoctorId());
+        } else {
+            throw new ValidationException("Debe indicar un proveedor o un doctor");
+        }
 
         Compra compra = new Compra();
         compra.setFecha(request.getFecha());
         compra.setProveedor(proveedor);
+        compra.setDoctor(doctor);
         compra.setNumeroFactura(request.getNumeroFactura());
         compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());
 
-        BigDecimal totalCompra = request.getProductos()
+        BigDecimal totalCompra = doctor != null
+                ? BigDecimal.ZERO
+                : request.getProductos()
                     .stream()
                     .map(CompraProductoRequestDTO::getCostoTotal)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -115,6 +132,15 @@ public class CompraServiceImpl implements CompraServiceBridge {
         return proveedor;
     }
 
+    private Doctor validarDatosDoctor(Long doctorId) {
+
+        Doctor doctor = doctorRepository.findById(doctorId).orElseThrow(() ->
+            new ResourceNotFoundException(("Doctor no encontrado con id" + doctorId))
+        );
+
+        return doctor;
+    }
+
     @Override
     @Transactional(readOnly= true)
     public Page<CompraResponseDTO> listarCompras(String proveedor, String estatus, LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
@@ -132,13 +158,25 @@ public class CompraServiceImpl implements CompraServiceBridge {
     @Transactional
     public CompraResponseDTO editarCompra (CompraRequestDTO request) {
 
-        Proveedor proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), request.getIdCompra());
-        
+        Proveedor proveedor = null;
+        Doctor doctor = null;
+
+        if (request.getProveedorId() != null) {
+            if (request.getNumeroFactura() == null || request.getNumeroFactura().isBlank()) {
+                throw new ValidationException("El número de factura es obligatorio");
+            }
+            proveedor = validarDatosProveedor(request.getProveedorId(), request.getNumeroFactura(), request.getIdCompra());
+        } else if (request.getDoctorId() != null) {
+            doctor = validarDatosDoctor(request.getDoctorId());
+        } else {
+            throw new ValidationException("Debe indicar un proveedor o un doctor");
+        }
 
         Compra compra = compraRepository.findById(request.getIdCompra()).orElseThrow(() ->
             new ResourceNotFoundException((COMPRA_NO_ENCONTRADA_ID + request.getIdCompra()))
         );
         compra.setProveedor(proveedor);
+        compra.setDoctor(doctor);
         compra.setNumeroFactura(request.getNumeroFactura());
         compra.setEstatus(request.getEstatus() == null   ? EstatusCompra.REGISTRADA : request.getEstatus());
 
@@ -181,7 +219,9 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
         compra.getProductos().removeIf(cp -> !keysRequest.contains(generarKey(cp.getInventario())));
 
-        BigDecimal totalCompra = compra.getProductos().stream().map(CompraProductos::getCostoTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalCompra = doctor != null
+                ? BigDecimal.ZERO
+                : compra.getProductos().stream().map(CompraProductos::getCostoTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
 
         loginService.settearUsuario();
 

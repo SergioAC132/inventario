@@ -22,7 +22,8 @@ public class CompraMapper {
         return new CompraResponseDTO(
             compra.getIdCompra(),
             compra.getFecha(),
-            compra.getProveedor().getNombre(),
+            compra.getProveedor() != null ? compra.getProveedor().getNombre() : null,
+            compra.getDoctor() != null ? compra.getDoctor().getNombre() : null,
             compra.getNumeroFactura(),
             compra.getEstatus(),
             compra.getTotal(),

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCompras, editarCompra } from '../api/compras';
 import { getProveedores } from '../api/proveedores';
+import { getDoctores } from '../api/doctores';
 import { getProductos } from '../api/productos';
 import type { CompraProductoRequest, EstatusCompra } from '../types/compra';
 import { Button } from '../components/ui/button';
@@ -19,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popove
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
 import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
 import ProveedorDialog from '../components/ProveedorDialog';
+import DoctorDialog from '../components/DoctorDialog';
 import ProductoDialog from '../components/ProductoDialog';
 import MarcaDialog from '../components/MarcaDialog';
 
@@ -27,7 +29,9 @@ const EditarCompra = () => {
     const { idCompra } = useParams();
     const queryClient = useQueryClient();
 
+    const [esDoctor, setEsDoctor] = useState(false);
     const [proveedorId, setProveedorId] = useState<number>(0);
+    const [doctorId, setDoctorId] = useState<number>(0);
     const [fecha, setFecha] = useState('');
     const [numeroFactura, setNumeroFactura] = useState('');
     const [estatus, setEstatus] = useState<EstatusCompra>('REGISTRADA');
@@ -36,10 +40,13 @@ const EditarCompra = () => {
     const [rowErrors, setRowErrors] = useState<Record<number, Set<string>>>({});
     const [proveedorOpen, setProveedorOpen] = useState(false);
     const [proveedorSearch, setProveedorSearch] = useState('');
+    const [doctorOpen, setDoctorOpen] = useState(false);
+    const [doctorSearch, setDoctorSearch] = useState('');
     const [productoOpen, setProductoOpen] = useState<number | null>(null);
 
     // Dialogs
     const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
+    const [doctorDialogOpen, setDoctorDialogOpen] = useState(false);
     const [productoDialogOpen, setProductoDialogOpen] = useState(false);
     const [productoRowIndex, setProductoRowIndex] = useState<number>(0);
     const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
@@ -52,28 +59,41 @@ const EditarCompra = () => {
         enabled: !!idCompra
     });
 
-    useEffect(() => {
-        if (compraData && proveedoresData) {
-            const proveedor = proveedoresData.find(p => p.nombre === compraData.proveedor);
-            setProveedorId(proveedor?.idProveedor || 0);
-            setFecha(compraData.fecha);
-            setNumeroFactura(compraData.numeroFactura);
-            setEstatus(compraData.estatus);
-            setProductos(compraData.productos.map(p => ({
-                productoId: p.idProducto,
-                lote: p.lote,
-                fechaCaducidad: p.fechaCaducidad,
-                cantidad: p.cantidad,
-                subtotal: parseFloat((p.costoTotal / 1.16).toFixed(2)),
-                costoTotal: p.costoTotal,
-            })));
-        }
-    }, [compraData]);
-
     const { data: proveedoresData } = useQuery({
         queryKey: ['proveedores', proveedorSearch],
         queryFn: () => getProveedores({ nombre: proveedorSearch || undefined, size: 50 }).then(r => r.data.content)
     });
+
+    const { data: doctoresData } = useQuery({
+        queryKey: ['doctores', doctorSearch],
+        queryFn: () => getDoctores({ nombre: doctorSearch || undefined, size: 50 }).then(r => r.data.content)
+    });
+
+    useEffect(() => {
+        if (!compraData) return;
+
+        setEsDoctor(!!compraData.doctor);
+
+        if (compraData.doctor) {
+            const doctor = doctoresData?.find(d => d.nombre === compraData.doctor);
+            setDoctorId(doctor?.idDoctor || 0);
+        } else if (proveedoresData) {
+            const proveedor = proveedoresData.find(p => p.nombre === compraData.proveedor);
+            setProveedorId(proveedor?.idProveedor || 0);
+        }
+
+        setFecha(compraData.fecha);
+        setNumeroFactura(compraData.numeroFactura || '');
+        setEstatus(compraData.estatus);
+        setProductos(compraData.productos.map(p => ({
+            productoId: p.idProducto,
+            lote: p.lote,
+            fechaCaducidad: p.fechaCaducidad,
+            cantidad: p.cantidad,
+            subtotal: compraData.doctor ? p.costoTotal : parseFloat((p.costoTotal / 1.16).toFixed(2)),
+            costoTotal: p.costoTotal,
+        })));
+    }, [compraData, proveedoresData, doctoresData]);
 
     const { data: productosData } = useQuery({
         queryKey: ['productos'],
@@ -99,7 +119,7 @@ const EditarCompra = () => {
         const nuevos = [...productos];
         nuevos[index] = { ...nuevos[index], [campo]: valor };
         if (campo === 'subtotal') {
-            nuevos[index].costoTotal = parseFloat((Number(valor) * 1.16).toFixed(2));
+            nuevos[index].costoTotal = esDoctor ? Number(valor) : parseFloat((Number(valor) * 1.16).toFixed(2));
         }
         setProductos(nuevos);
         if (rowErrors[index]?.has(campo)) {
@@ -119,8 +139,12 @@ const EditarCompra = () => {
     };
 
     const handleSubmit = () => {
-        if (!proveedorId) { setError('Selecciona un proveedor'); return; }
-        if (!numeroFactura) { setError('El número de factura es obligatorio'); return; }
+        if (esDoctor) {
+            if (!doctorId) { setError('Selecciona un doctor'); return; }
+        } else {
+            if (!proveedorId) { setError('Selecciona un proveedor'); return; }
+            if (!numeroFactura) { setError('El número de factura es obligatorio'); return; }
+        }
         const newRowErrors: Record<number, Set<string>> = {};
         productos.forEach((p, i) => {
             const fields = new Set<string>();
@@ -138,10 +162,14 @@ const EditarCompra = () => {
         }
         setRowErrors({});
         setError('');
-        editarMutation.mutate({ idCompra: Number(idCompra), proveedorId, fecha, numeroFactura, estatus, productos });
+        editarMutation.mutate(esDoctor
+            ? { idCompra: Number(idCompra), doctorId, fecha, estatus, productos }
+            : { idCompra: Number(idCompra), proveedorId, fecha, numeroFactura, estatus, productos }
+        );
     };
 
     const proveedorSeleccionado = proveedoresData?.find(p => p.idProveedor === proveedorId);
+    const doctorSeleccionado = doctoresData?.find(d => d.idDoctor === doctorId);
 
     return (
         <div className="space-y-6 max-w-5xl mx-auto">
@@ -149,51 +177,91 @@ const EditarCompra = () => {
                 <Button variant="ghost" size="icon" onClick={() => navigate('/compras')}>
                     <ChevronLeft size={20} />
                 </Button>
-                <h1 className="text-2xl font-semibold text-gray-800">Editar compra</h1>
+                <h1 className="text-2xl font-semibold text-gray-800">{esDoctor ? 'Editar ingreso de doctor' : 'Editar compra'}</h1>
             </div>
 
             <div className="bg-white border rounded-lg p-4 md:p-6 space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label>Proveedor</Label>
-                        <div className="flex gap-2">
-                            <Popover open={proveedorOpen} onOpenChange={setProveedorOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="flex-1 justify-between font-normal">
-                                        {proveedorSeleccionado ? proveedorSeleccionado.nombre : 'Selecciona un proveedor'}
-                                        <ChevronsUpDown size={14} className="text-gray-400" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[300px] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Buscar proveedor..."
-                                            value={proveedorSearch} onValueChange={setProveedorSearch} />
-                                        <CommandList className="max-h-60 overflow-y-auto"
-                                            onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
-                                            <CommandEmpty>No se encontraron proveedores</CommandEmpty>
-                                            <CommandGroup>
-                                                {proveedoresData?.map(p => (
-                                                    <CommandItem key={p.idProveedor} value={p.nombre}
-                                                        onSelect={() => { setProveedorId(p.idProveedor); setProveedorOpen(false); }}>
-                                                        <Check size={14} className={proveedorId === p.idProveedor ? 'opacity-100' : 'opacity-0'} />
-                                                        {p.nombre}
-                                                    </CommandItem>
-                                                ))}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                            <Button variant="outline" size="icon" onClick={() => setProveedorDialogOpen(true)}>
-                                <Plus size={16} />
-                            </Button>
+                    {esDoctor ? (
+                        <div className="space-y-2">
+                            <Label>Doctor</Label>
+                            <div className="flex gap-2">
+                                <Popover open={doctorOpen} onOpenChange={setDoctorOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="flex-1 justify-between font-normal">
+                                            {doctorSeleccionado ? doctorSeleccionado.nombre : 'Selecciona un doctor'}
+                                            <ChevronsUpDown size={14} className="text-gray-400" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[300px] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar doctor..."
+                                                value={doctorSearch} onValueChange={setDoctorSearch} />
+                                            <CommandList className="max-h-60 overflow-y-auto"
+                                                onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
+                                                <CommandEmpty>No se encontraron doctores</CommandEmpty>
+                                                <CommandGroup>
+                                                    {doctoresData?.map(d => (
+                                                        <CommandItem key={d.idDoctor} value={d.nombre}
+                                                            onSelect={() => { setDoctorId(d.idDoctor); setDoctorOpen(false); }}>
+                                                            <Check size={14} className={doctorId === d.idDoctor ? 'opacity-100' : 'opacity-0'} />
+                                                            {d.nombre}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => setDoctorDialogOpen(true)}>
+                                    <Plus size={16} />
+                                </Button>
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <>
+                        <div className="space-y-2">
+                            <Label>Proveedor</Label>
+                            <div className="flex gap-2">
+                                <Popover open={proveedorOpen} onOpenChange={setProveedorOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="flex-1 justify-between font-normal">
+                                            {proveedorSeleccionado ? proveedorSeleccionado.nombre : 'Selecciona un proveedor'}
+                                            <ChevronsUpDown size={14} className="text-gray-400" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[300px] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar proveedor..."
+                                                value={proveedorSearch} onValueChange={setProveedorSearch} />
+                                            <CommandList className="max-h-60 overflow-y-auto"
+                                                onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
+                                                <CommandEmpty>No se encontraron proveedores</CommandEmpty>
+                                                <CommandGroup>
+                                                    {proveedoresData?.map(p => (
+                                                        <CommandItem key={p.idProveedor} value={p.nombre}
+                                                            onSelect={() => { setProveedorId(p.idProveedor); setProveedorOpen(false); }}>
+                                                            <Check size={14} className={proveedorId === p.idProveedor ? 'opacity-100' : 'opacity-0'} />
+                                                            {p.nombre}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => setProveedorDialogOpen(true)}>
+                                    <Plus size={16} />
+                                </Button>
+                            </div>
+                        </div>
 
-                    <div className="space-y-2">
-                        <Label>Número de factura</Label>
-                        <Input value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)}/>
-                    </div>
+                        <div className="space-y-2">
+                            <Label>Número de factura</Label>
+                            <Input value={numeroFactura} onChange={e => setNumeroFactura(e.target.value)}/>
+                        </div>
+                        </>
+                    )}
 
                     <div className="space-y-2">
                         <Label>Fecha</Label>
@@ -238,7 +306,7 @@ const EditarCompra = () => {
                                     <TableHead>Lote</TableHead>
                                     <TableHead>Caducidad</TableHead>
                                     <TableHead>Cantidad</TableHead>
-                                    <TableHead>Subtotal</TableHead>
+                                    <TableHead>{esDoctor ? 'Valor del producto' : 'Subtotal'}</TableHead>
                                     <TableHead></TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -319,14 +387,16 @@ const EditarCompra = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>{error && <p className="text-sm text-red-500">{error}</p>}</div>
                     <div className="flex items-center gap-6">
+                        {!esDoctor && (
+                            <div className="text-right">
+                                <p className="text-xs text-gray-500">Subtotal</p>
+                                <p className="text-lg font-semibold text-gray-600">
+                                    ${totalSubtotal.toFixed(2)}
+                                </p>
+                            </div>
+                        )}
                         <div className="text-right">
-                            <p className="text-xs text-gray-500">Subtotal</p>
-                            <p className="text-lg font-semibold text-gray-600">
-                                ${totalSubtotal.toFixed(2)}
-                            </p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-sm text-gray-500">Total (IVA 16%)</p>
+                            <p className="text-sm text-gray-500">{esDoctor ? 'Costo de referencia' : 'Total (IVA 16%)'}</p>
                             <p className="text-2xl font-semibold text-gray-800">
                                 ${totalConIva.toFixed(2)}
                             </p>
@@ -342,6 +412,12 @@ const EditarCompra = () => {
                 open={proveedorDialogOpen}
                 onOpenChange={setProveedorDialogOpen}
                 onCreado={setProveedorId}
+            />
+
+            <DoctorDialog
+                open={doctorDialogOpen}
+                onOpenChange={setDoctorDialogOpen}
+                onCreado={setDoctorId}
             />
 
             <ProductoDialog

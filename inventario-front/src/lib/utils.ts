@@ -10,3 +10,6 @@ export const formatearFecha = (fecha: string): string => {
     const [anio, mes, dia] = fecha.split('-');
     return `${dia}/${mes}/${anio}`;
 };
+
+export const capitalizarPalabras = (texto: string): string =>
+    texto.trim().replace(/\s+/g, ' ').toLowerCase().replace(/(^|\s)\p{L}/gu, c => c.toUpperCase());

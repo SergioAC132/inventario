@@ -22,9 +22,10 @@ export interface CompraProductoResponse {
 
 export interface CompraRequest {
     idCompra?: number;
-    proveedorId: number;
+    proveedorId?: number;
+    doctorId?: number;
     fecha: string;
-    numeroFactura: string;
+    numeroFactura?: string;
     productos: CompraProductoRequest[];
     estatus: EstatusCompra;
 }
@@ -32,7 +33,8 @@ export interface CompraRequest {
 export interface CompraResponse {
     idCompra: number;
     fecha: string;
-    proveedor: string;
+    proveedor: string | null;
+    doctor: string | null;
     numeroFactura: string;
     estatus: EstatusCompra;
     total: number;

@@ -5,9 +5,7 @@ import java.util.List;
 
 import com.progastro.inventario.models.Enums.EstatusCompra;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,12 +19,12 @@ public class CompraRequestDTO {
     
     private Long idCompra;
 
-    @NotNull
     private Long proveedorId;
+
+    private Long doctorId;
 
     private LocalDate fecha;
 
-    @NotBlank
     private String numeroFactura;
 
     @NotEmpty

@@ -18,7 +18,7 @@ import {
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '../components/ui/select';
-import { Plus, Eye, Ban, Pencil } from 'lucide-react';
+import { Plus, Eye, Ban, Pencil, Stethoscope } from 'lucide-react';
 
 const estatusBadge = (estatus: EstatusCompra) => {
     switch (estatus) {
@@ -73,11 +73,18 @@ const Compras = () => {
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-gray-800">Compras</h1>
                 {puedeRegistrar && (
-                    <Button onClick={() => navigate('/compras/registrar')} className="gap-2">
-                        <Plus size={16} />
-                        <span className="hidden sm:inline">Nueva compra</span>
-                        <span className="sm:hidden">Nueva</span>
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => navigate('/compras/ingreso-doctor')} className="gap-2">
+                            <Stethoscope size={16} />
+                            <span className="hidden sm:inline">Ingreso de doctor</span>
+                            <span className="sm:hidden">Doctor</span>
+                        </Button>
+                        <Button onClick={() => navigate('/compras/registrar')} className="gap-2">
+                            <Plus size={16} />
+                            <span className="hidden sm:inline">Nueva compra</span>
+                            <span className="sm:hidden">Nueva</span>
+                        </Button>
+                    </div>
                 )}
             </div>
 
@@ -120,7 +127,7 @@ const Compras = () => {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Fecha</TableHead>
-                            <TableHead>Proveedor</TableHead>
+                            <TableHead>Proveedor / Doctor</TableHead>
                             <TableHead>Factura</TableHead>
                             <TableHead>Estatus</TableHead>
                             <TableHead>Total</TableHead>
@@ -139,7 +146,11 @@ const Compras = () => {
                         ) : comprasData?.content.map(compra => (
                             <TableRow key={compra.idCompra}>
                                 <TableCell>{formatearFecha(compra.fecha)}</TableCell>
-                                <TableCell>{compra.proveedor}</TableCell>
+                                <TableCell>
+                                    {compra.doctor
+                                        ? <span className="inline-flex items-center gap-1"><Stethoscope size={14} className="text-gray-400" />{compra.doctor}</span>
+                                        : compra.proveedor}
+                                </TableCell>
                                 <TableCell className="font-mono text-sm">{compra.numeroFactura}</TableCell>
                                 <TableCell>
                                     <Badge variant={estatusBadge(compra.estatus)}>
@@ -184,8 +195,8 @@ const Compras = () => {
                         <div className="space-y-4">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                                 <div>
-                                    <p className="text-gray-500">Proveedor</p>
-                                    <p className="font-medium">{compraSeleccionada.proveedor}</p>
+                                    <p className="text-gray-500">{compraSeleccionada.doctor ? 'Doctor' : 'Proveedor'}</p>
+                                    <p className="font-medium">{compraSeleccionada.doctor || compraSeleccionada.proveedor}</p>
                                 </div>
                                 <div>
                                     <p className="text-gray-500">Factura</p>

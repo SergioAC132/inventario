@@ -9,6 +9,7 @@ import Login from '../pages/Login';
 import Productos from '../pages/Productos';
 import ProtectedRoute from './ProtectedRoute';
 import RegistrarCompra from '../pages/RegistrarCompra';
+import RegistrarIngresoDoctor from '../pages/RegistrarIngresoDoctor';
 import RegistrarSalida from '../pages/RegistrarSalida';
 import Salidas from '../pages/Salidas';
 import Usuarios from '../pages/Usuarios';
@@ -27,6 +28,7 @@ const AppRouter = () => {
                         <Route path="/dashboard" element={<Dashboard />} />
                         <Route path="/compras" element={<Compras />} />
                         <Route path="/compras/registrar" element={<RegistrarCompra />} />
+                        <Route path="/compras/ingreso-doctor" element={<RegistrarIngresoDoctor />} />
                         <Route path="/compras/editar/:idCompra" element={<EditarCompra />} />
                         <Route path="/salidas" element={<Salidas />} />
                         <Route path="/salidas/registrar" element={<RegistrarSalida />} />

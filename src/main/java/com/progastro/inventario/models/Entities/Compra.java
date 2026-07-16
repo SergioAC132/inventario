@@ -48,13 +48,21 @@ public class Compra {
     @Column(nullable= false)
     private LocalDate fecha;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(
         name = "id_proveedor",
-        nullable= false,
+        nullable= true,
         foreignKey=@ForeignKey(name = "fk_compra_proveedor")
     )
     private Proveedor proveedor;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(
+        name = "id_doctor",
+        nullable= true,
+        foreignKey=@ForeignKey(name = "fk_compra_doctor")
+    )
+    private Doctor doctor;
 
     @Column(name = "numero_factura", nullable= false, length= 50)
     private String numeroFactura;
