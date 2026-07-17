@@ -6,9 +6,12 @@ import { getProveedores } from '../api/proveedores';
 import { getDoctores } from '../api/doctores';
 import { getProductos } from '../api/productos';
 import type { CompraProductoRequest, EstatusCompra } from '../types/compra';
+import type { ProveedorResponse } from '../types/proveedor';
+import type { DoctorResponse } from '../types/doctor';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -18,7 +21,7 @@ import {
 } from '../components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
-import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check, Pencil } from 'lucide-react';
 import ProveedorDialog from '../components/ProveedorDialog';
 import DoctorDialog from '../components/DoctorDialog';
 import ProductoDialog from '../components/ProductoDialog';
@@ -36,6 +39,7 @@ const EditarCompra = () => {
     const [numeroFactura, setNumeroFactura] = useState('');
     const [estatus, setEstatus] = useState<EstatusCompra>('REGISTRADA');
     const [productos, setProductos] = useState<CompraProductoRequest[]>([]);
+    const [nota, setNota] = useState('');
     const [error, setError] = useState('');
     const [rowErrors, setRowErrors] = useState<Record<number, Set<string>>>({});
     const [proveedorOpen, setProveedorOpen] = useState(false);
@@ -46,7 +50,9 @@ const EditarCompra = () => {
 
     // Dialogs
     const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
+    const [proveedorEditar, setProveedorEditar] = useState<ProveedorResponse | null>(null);
     const [doctorDialogOpen, setDoctorDialogOpen] = useState(false);
+    const [doctorEditar, setDoctorEditar] = useState<DoctorResponse | null>(null);
     const [productoDialogOpen, setProductoDialogOpen] = useState(false);
     const [productoRowIndex, setProductoRowIndex] = useState<number>(0);
     const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
@@ -163,8 +169,8 @@ const EditarCompra = () => {
         setRowErrors({});
         setError('');
         editarMutation.mutate(esDoctor
-            ? { idCompra: Number(idCompra), doctorId, fecha, estatus, productos }
-            : { idCompra: Number(idCompra), proveedorId, fecha, numeroFactura, estatus, productos }
+            ? { idCompra: Number(idCompra), doctorId, fecha, estatus, productos, nota: nota || undefined }
+            : { idCompra: Number(idCompra), proveedorId, fecha, numeroFactura, estatus, productos, nota: nota || undefined }
         );
     };
 
@@ -213,8 +219,12 @@ const EditarCompra = () => {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                <Button variant="outline" size="icon" onClick={() => setDoctorDialogOpen(true)}>
+                                <Button variant="outline" size="icon" onClick={() => { setDoctorEditar(null); setDoctorDialogOpen(true); }}>
                                     <Plus size={16} />
+                                </Button>
+                                <Button variant="outline" size="icon" disabled={!doctorSeleccionado}
+                                    onClick={() => { setDoctorEditar(doctorSeleccionado ?? null); setDoctorDialogOpen(true); }}>
+                                    <Pencil size={16} />
                                 </Button>
                             </div>
                         </div>
@@ -250,8 +260,12 @@ const EditarCompra = () => {
                                         </Command>
                                     </PopoverContent>
                                 </Popover>
-                                <Button variant="outline" size="icon" onClick={() => setProveedorDialogOpen(true)}>
+                                <Button variant="outline" size="icon" onClick={() => { setProveedorEditar(null); setProveedorDialogOpen(true); }}>
                                     <Plus size={16} />
+                                </Button>
+                                <Button variant="outline" size="icon" disabled={!proveedorSeleccionado}
+                                    onClick={() => { setProveedorEditar(proveedorSeleccionado ?? null); setProveedorDialogOpen(true); }}>
+                                    <Pencil size={16} />
                                 </Button>
                             </div>
                         </div>
@@ -384,6 +398,26 @@ const EditarCompra = () => {
 
                 <Separator />
 
+                <div className="space-y-3">
+                    <h2 className="font-medium text-gray-700">Notas</h2>
+                    {compraData?.notas && compraData.notas.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                            {compraData.notas.map(n => (
+                                <div key={n.idNota} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                                    <p className="text-gray-700">{n.texto}</p>
+                                    <p className="text-xs text-gray-400">{n.usuario} · {new Date(n.fecha).toLocaleString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="space-y-2">
+                        <Label>Agregar nota (opcional)</Label>
+                        <Textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="Agregar una nota..." />
+                    </div>
+                </div>
+
+                <Separator />
+
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>{error && <p className="text-sm text-red-500">{error}</p>}</div>
                     <div className="flex items-center gap-6">
@@ -412,12 +446,14 @@ const EditarCompra = () => {
                 open={proveedorDialogOpen}
                 onOpenChange={setProveedorDialogOpen}
                 onCreado={setProveedorId}
+                proveedor={proveedorEditar}
             />
 
             <DoctorDialog
                 open={doctorDialogOpen}
                 onOpenChange={setDoctorDialogOpen}
                 onCreado={setDoctorId}
+                doctor={doctorEditar}
             />
 
             <ProductoDialog

@@ -10,12 +10,8 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DoctorRequestDTO {
-
-    private Long idDoctor;
+public class EliminarSalidaRequestDTO {
 
     @NotBlank
-    private String nombre;
-
-    private String telefono;
+    private String password;
 }

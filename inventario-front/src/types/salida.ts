@@ -1,3 +1,5 @@
+import type { NotaResponse } from './nota';
+
 export type TipoSalida = 'CIRUGIA' | 'ESTUDIO' | 'VENTA';
 export type DestinoSalida = 'PARTICULAR' | 'ASEGURADORA';
 
@@ -26,7 +28,10 @@ export interface SalidaRequest {
     fecha: string;
     tipo: TipoSalida;
     destino: DestinoSalida;
+    folio?: number;
+    destinatarioId?: number;
     productos: SalidaProductoRequest[];
+    nota?: string;
 }
 
 export interface SalidaResponse {
@@ -34,6 +39,9 @@ export interface SalidaResponse {
     fecha: string;
     tipo: string;
     destino: string;
+    folio?: number;
+    destinatario?: string;
     total: number;
     productos: SalidaProductoResponse[];
+    notas: NotaResponse[];
 }

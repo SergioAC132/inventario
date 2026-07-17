@@ -7,5 +7,6 @@ import com.progastro.inventario.models.DTO.DoctorResponseDTO;
 
 public interface DoctorServiceBridge {
     DoctorResponseDTO registrarDoctor(DoctorRequestDTO request);
+    DoctorResponseDTO editarDoctor(DoctorRequestDTO request);
     Page<DoctorResponseDTO> listarDoctores(String nombre, int page, int size);
 }

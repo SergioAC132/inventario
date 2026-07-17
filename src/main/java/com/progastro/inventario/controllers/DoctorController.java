@@ -32,6 +32,12 @@ public class DoctorController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(true, "Doctor registrado correctamente", response));
     }
 
+    @PostMapping("/editar-doctor")
+    public ResponseEntity<ApiResponse<DoctorResponseDTO>> editarDoctor(@RequestBody @Valid DoctorRequestDTO request) {
+        DoctorResponseDTO response = doctorServiceBridge.editarDoctor(request);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(new ApiResponse<>(true, "Doctor editado correctamente", response));
+    }
+
     @GetMapping("/consultar-doctores")
     public ResponseEntity<PageResponse<DoctorResponseDTO>> listarDoctores(
             @RequestParam(required = false) String nombre,

@@ -4,12 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getSalidas, editarSalida } from '../api/salidas';
 import { getProductos } from '../api/productos';
 import { getInventariosPorProducto } from '../api/inventarios';
+import { getDestinatarios } from '../api/destinatarios';
 import type { SalidaProductoRequest, TipoSalida, DestinoSalida } from '../types/salida';
 import type { ProductoResponse } from '../types/producto';
 import type { InventarioResponse } from '../types/inventario';
+import type { DestinatarioResponse } from '../types/destinatario';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -19,7 +22,8 @@ import {
 } from '../components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
-import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check, Pencil } from 'lucide-react';
+import DestinatarioDialog from '../components/DestinatarioDialog';
 
 interface FilaSalida {
     productoId: number;
@@ -36,7 +40,15 @@ const EditarSalida = () => {
     const [fecha, setFecha] = useState('');
     const [tipo, setTipo] = useState<TipoSalida>('VENTA');
     const [destino, setDestino] = useState<DestinoSalida>('PARTICULAR');
+    const [identificador, setIdentificador] = useState<'NINGUNO' | 'FOLIO' | 'DESTINATARIO'>('NINGUNO');
+    const [folio, setFolio] = useState('');
+    const [destinatarioId, setDestinatarioId] = useState<number>(0);
+    const [destinatarioOpen, setDestinatarioOpen] = useState(false);
+    const [destinatarioSearch, setDestinatarioSearch] = useState('');
+    const [destinatarioDialogOpen, setDestinatarioDialogOpen] = useState(false);
+    const [destinatarioEditar, setDestinatarioEditar] = useState<DestinatarioResponse | null>(null);
     const [filas, setFilas] = useState<FilaSalida[]>([]);
+    const [nota, setNota] = useState('');
     const [error, setError] = useState('');
     const [productoOpen, setProductoOpen] = useState<number | null>(null);
     const [loteOpen, setLoteOpen] = useState<number | null>(null);
@@ -55,6 +67,13 @@ const EditarSalida = () => {
         queryFn: () => getProductos({ size: 100 }).then(r => r.data.content)
     });
 
+    const { data: destinatariosData } = useQuery({
+        queryKey: ['destinatarios', destinatarioSearch],
+        queryFn: () => getDestinatarios({ nombre: destinatarioSearch || undefined, size: 50 }).then(r => r.data.content)
+    });
+
+    const destinatarioSeleccionado = destinatariosData?.find(d => d.idDestinatario === destinatarioId);
+
     const cargarInventarios = async (index: number, productoId: number) => {
         if (productoId === 0) return;
         const result = await getInventariosPorProducto(productoId);
@@ -67,6 +86,16 @@ const EditarSalida = () => {
             setFecha(salidaData.fecha);
             setTipo(salidaData.tipo as TipoSalida);
             setDestino(salidaData.destino as DestinoSalida);
+            if (salidaData.folio != null) {
+                setIdentificador('FOLIO');
+                setFolio(String(salidaData.folio));
+            } else if (salidaData.destinatario) {
+                setIdentificador('DESTINATARIO');
+                const destinatario = destinatariosData?.find(d => d.nombre === salidaData.destinatario);
+                setDestinatarioId(destinatario?.idDestinatario || 0);
+            } else {
+                setIdentificador('NINGUNO');
+            }
 
             const filasIniciales: FilaSalida[] = salidaData.productos.map(p => {
                 return {
@@ -82,7 +111,7 @@ const EditarSalida = () => {
                 cargarInventarios(index, fila.productoId);
             });
         }
-    }, [salidaData, productosData]);
+    }, [salidaData, productosData, destinatariosData]);
 
     const editarMutation = useMutation({
         mutationFn: editarSalida,
@@ -156,7 +185,16 @@ const EditarSalida = () => {
             cantidad: f.cantidad,
             total: f.total,
         }));
-        editarMutation.mutate({ idSalida: Number(idSalida), fecha, tipo, destino, productos });
+        editarMutation.mutate({
+            idSalida: Number(idSalida),
+            fecha,
+            tipo,
+            destino,
+            folio: identificador === 'FOLIO' && folio ? Number(folio) : undefined,
+            destinatarioId: identificador === 'DESTINATARIO' && destinatarioId ? destinatarioId : undefined,
+            productos,
+            nota: nota || undefined,
+        });
     };
 
     return (
@@ -195,6 +233,71 @@ const EditarSalida = () => {
                             </SelectContent>
                         </Select>
                     </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <Label>Identificador (opcional)</Label>
+                        <Select value={identificador} onValueChange={v => {
+                            setIdentificador(v as typeof identificador);
+                            setFolio('');
+                            setDestinatarioId(0);
+                        }}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="NINGUNO">Ninguno</SelectItem>
+                                <SelectItem value="FOLIO">Folio</SelectItem>
+                                <SelectItem value="DESTINATARIO">Destinatario</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {identificador === 'FOLIO' && (
+                        <div className="space-y-2">
+                            <Label>Folio</Label>
+                            <Input type="number" value={folio} onChange={e => setFolio(e.target.value)} placeholder="Número de folio" />
+                        </div>
+                    )}
+                    {identificador === 'DESTINATARIO' && (
+                        <div className="space-y-2">
+                            <Label>Destinatario</Label>
+                            <div className="flex gap-2">
+                                <Popover open={destinatarioOpen} onOpenChange={setDestinatarioOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className="flex-1 justify-between font-normal">
+                                            {destinatarioSeleccionado ? destinatarioSeleccionado.nombre : 'Selecciona un destinatario'}
+                                            <ChevronsUpDown size={14} className="text-gray-400" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[300px] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar destinatario..."
+                                                value={destinatarioSearch} onValueChange={setDestinatarioSearch} />
+                                            <CommandList className="max-h-60 overflow-y-auto"
+                                                onWheel={e => e.currentTarget.scrollTop += e.deltaY}>
+                                                <CommandEmpty>No se encontraron destinatarios</CommandEmpty>
+                                                <CommandGroup>
+                                                    {destinatariosData?.map(d => (
+                                                        <CommandItem key={d.idDestinatario} value={d.nombre}
+                                                            onSelect={() => { setDestinatarioId(d.idDestinatario); setDestinatarioOpen(false); }}>
+                                                            <Check size={14} className={destinatarioId === d.idDestinatario ? 'opacity-100' : 'opacity-0'} />
+                                                            {d.nombre}
+                                                        </CommandItem>
+                                                    ))}
+                                                </CommandGroup>
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <Button variant="outline" size="icon" onClick={() => { setDestinatarioEditar(null); setDestinatarioDialogOpen(true); }}>
+                                    <Plus size={16} />
+                                </Button>
+                                <Button variant="outline" size="icon" disabled={!destinatarioSeleccionado}
+                                    onClick={() => { setDestinatarioEditar(destinatarioSeleccionado ?? null); setDestinatarioDialogOpen(true); }}>
+                                    <Pencil size={16} />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <Separator />
@@ -342,6 +445,26 @@ const EditarSalida = () => {
 
                 <Separator />
 
+                <div className="space-y-3">
+                    <h2 className="font-medium text-gray-700">Notas</h2>
+                    {salidaData?.notas && salidaData.notas.length > 0 && (
+                        <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                            {salidaData.notas.map(n => (
+                                <div key={n.idNota} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                                    <p className="text-gray-700">{n.texto}</p>
+                                    <p className="text-xs text-gray-400">{n.usuario} · {new Date(n.fecha).toLocaleString()}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div className="space-y-2">
+                        <Label>Agregar nota (opcional)</Label>
+                        <Textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="Agregar una nota..." />
+                    </div>
+                </div>
+
+                <Separator />
+
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>{error && <p className="text-sm text-red-500">{error}</p>}</div>
                     <div className="flex items-center gap-6">
@@ -365,6 +488,13 @@ const EditarSalida = () => {
                     </div>
                 </div>
             </div>
+
+            <DestinatarioDialog
+                open={destinatarioDialogOpen}
+                onOpenChange={setDestinatarioDialogOpen}
+                onCreado={setDestinatarioId}
+                destinatario={destinatarioEditar}
+            />
         </div>
     );
 };

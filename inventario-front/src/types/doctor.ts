@@ -5,6 +5,7 @@ export interface DoctorResponse {
 }
 
 export interface DoctorRequest {
+    idDoctor?: number;
     nombre: string;
     telefono?: string;
 }

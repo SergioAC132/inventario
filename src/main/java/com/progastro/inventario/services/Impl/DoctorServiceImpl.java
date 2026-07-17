@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.progastro.inventario.exceptions.ResourceNotFoundException;
 import com.progastro.inventario.mappers.DoctorMapper;
 import com.progastro.inventario.models.DTO.DoctorRequestDTO;
 import com.progastro.inventario.models.DTO.DoctorResponseDTO;
@@ -27,6 +28,19 @@ public class DoctorServiceImpl implements DoctorServiceBridge {
     @Transactional
     public DoctorResponseDTO registrarDoctor(DoctorRequestDTO request) {
         Doctor doctor = new Doctor();
+        doctor.setNombre(capitalizarPalabras(request.getNombre()));
+        doctor.setTelefono(request.getTelefono());
+
+        return doctorMapper.toResponse(doctorRepository.save(doctor));
+    }
+
+    @Override
+    @Transactional
+    public DoctorResponseDTO editarDoctor(DoctorRequestDTO request) {
+        Doctor doctor = doctorRepository.findById(request.getIdDoctor()).orElseThrow(() ->
+            new ResourceNotFoundException("Doctor no encontrado con id: " + request.getIdDoctor())
+        );
+
         doctor.setNombre(capitalizarPalabras(request.getNombre()));
         doctor.setTelefono(request.getTelefono());
 

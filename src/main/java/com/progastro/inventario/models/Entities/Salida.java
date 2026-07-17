@@ -17,6 +17,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -49,6 +51,13 @@ public class Salida {
     @Enumerated(EnumType.STRING)
     @Column(name="destino", nullable = false)
     private DestinoSalida destino;
+
+    @Column(name= "folio")
+    private Long folio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_destinatario")
+    private Destinatario destinatario;
 
     @Column(name= "total", nullable= false, precision= 12, scale= 2)
     private BigDecimal total;

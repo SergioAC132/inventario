@@ -1,6 +1,7 @@
 package com.progastro.inventario.models.DTO;
 
-import jakarta.validation.constraints.NotBlank;
+import java.util.Date;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,12 +11,9 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class DoctorRequestDTO {
-
-    private Long idDoctor;
-
-    @NotBlank
-    private String nombre;
-
-    private String telefono;
+public class NotaResponseDTO {
+    private Long idNota;
+    private Date fecha;
+    private String texto;
+    private String usuario;
 }

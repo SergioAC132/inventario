@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect} from 'react';
 import type { ReactNode } from 'react';
 import type { AuthContextType, Usuario } from '../types/auth';
-import { setAuthHeader, clearAuthHeader, loadAuthFromStorage } from '../api/client';
+import { setAuthToken, clearAuthToken, loadAuthFromStorage } from '../api/client';
 import client from '../api/client';
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -11,38 +11,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         loadAuthFromStorage();
-        const stored = localStorage.getItem('usuario');
+        const stored = sessionStorage.getItem('usuario');
         if (stored) {
             setUsuario(JSON.parse(stored));
         }
         setLoading(false);
-
-        const handleBeforeUnload = () => {
-            clearAuthHeader();
-            localStorage.removeItem('auth');
-            localStorage.removeItem('usuario');
-        };
-
-        window.addEventListener('beforeunload', handleBeforeUnload);
-        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, []);
 
     const login = async (username: string, password: string) => {
-        setAuthHeader(username, password);
-        try {
-            const response = await client.get('/usuarios/me');
-            const user: Usuario = response.data.data;
-            setUsuario(user);
-            localStorage.setItem('usuario', JSON.stringify(user));
-        } catch (error) {
-            clearAuthHeader();
-            throw error;
-        }
+        const response = await client.post('/auth/login', { username, password });
+        const { token, usuario: user } = response.data.data;
+        setAuthToken(token);
+        setUsuario(user);
+        sessionStorage.setItem('usuario', JSON.stringify(user));
     };
 
     const logout = () => {
-        clearAuthHeader();
-        localStorage.removeItem('usuario');
+        clearAuthToken();
+        sessionStorage.removeItem('usuario');
         setUsuario(null);
     };
 

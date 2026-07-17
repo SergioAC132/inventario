@@ -143,6 +143,7 @@ public class InventarioServiceImpl implements InventarioServiceBridge {
     public void revertirSalida(SalidaProductos sp) {
         Inventario inv = sp.getInventario();
         inv.setCantidadDisponible(inv.getCantidadDisponible() + sp.getCantidad());
+        inv.setActive(true);
         inventarioRepository.save(inv);
     }
 

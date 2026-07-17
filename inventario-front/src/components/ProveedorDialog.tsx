@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { crearProveedor } from '../api/proveedores';
-import type { ProveedorRequest } from '../types/proveedor';
+import { crearProveedor, editarProveedor } from '../api/proveedores';
+import type { ProveedorRequest, ProveedorResponse } from '../types/proveedor';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -12,6 +12,7 @@ interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onCreado: (idProveedor: number) => void;
+    proveedor?: ProveedorResponse | null;
 }
 
 const EMPTY_FORM: ProveedorRequest = { nombre: '', rfc: '', tipoPersona: 1, telefono: '' };
@@ -33,13 +34,29 @@ const FIELD_LABELS: Partial<Record<keyof ProveedorRequest | '_server', string>> 
     _server: 'Error',
 };
 
-const ProveedorDialog = ({ open, onOpenChange, onCreado }: Props) => {
+const ProveedorDialog = ({ open, onOpenChange, onCreado, proveedor }: Props) => {
     const queryClient = useQueryClient();
     const [form, setForm] = useState<ProveedorRequest>(EMPTY_FORM);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+    const esEdicion = !!proveedor;
+
+    useEffect(() => {
+        if (open) {
+            setForm(proveedor ? {
+                idProveedor: proveedor.idProveedor,
+                nombre: proveedor.nombre,
+                rfc: proveedor.rfc,
+                tipoPersona: proveedor.tipoPersona,
+                telefono: proveedor.telefono,
+                correo: proveedor.correo,
+                codigoPostal: proveedor.codigoPostal,
+            } : EMPTY_FORM);
+            setFieldErrors({});
+        }
+    }, [open, proveedor]);
 
     const mutation = useMutation({
-        mutationFn: crearProveedor,
+        mutationFn: (data: ProveedorRequest) => esEdicion ? editarProveedor(data) : crearProveedor(data),
         onSuccess: (res) => {
             queryClient.invalidateQueries({ queryKey: ['proveedores'] });
             onCreado(res.data.data.idProveedor);
@@ -66,7 +83,7 @@ const ProveedorDialog = ({ open, onOpenChange, onCreado }: Props) => {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
-                <DialogHeader><DialogTitle>Nuevo proveedor</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{esEdicion ? 'Editar proveedor' : 'Nuevo proveedor'}</DialogTitle></DialogHeader>
                 <div className="space-y-4 py-2">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2 col-span-2">

@@ -25,7 +25,11 @@ public class SalidaRequestDTO {
     private LocalDate fecha;
     private TipoSalida tipo;
     private DestinoSalida destino;
+    private Long folio;
+    private Long destinatarioId;
 
     @NotEmpty
     private List<SalidaProductoRequestDTO> productos;
+
+    private String nota;
 }

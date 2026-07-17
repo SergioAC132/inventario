@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { crearDoctor, editarDoctor } from '../api/doctores';
-import type { DoctorRequest, DoctorResponse } from '../types/doctor';
+import { crearDestinatario, editarDestinatario } from '../api/destinatarios';
+import type { DestinatarioRequest, DestinatarioResponse } from '../types/destinatario';
 import { capitalizarPalabras } from '../lib/utils';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,44 +11,43 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 interface Props {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    onCreado: (idDoctor: number) => void;
-    doctor?: DoctorResponse | null;
+    onCreado: (idDestinatario: number) => void;
+    destinatario?: DestinatarioResponse | null;
 }
 
-const EMPTY_FORM: DoctorRequest = { nombre: '', telefono: '' };
+const EMPTY_FORM: DestinatarioRequest = { nombre: '' };
 
-type FieldErrors = Partial<Record<keyof DoctorRequest | '_server', string>>;
+type FieldErrors = Partial<Record<keyof DestinatarioRequest | '_server', string>>;
 
-const validate = (form: DoctorRequest): FieldErrors => {
+const validate = (form: DestinatarioRequest): FieldErrors => {
     const errors: FieldErrors = {};
     if (!form.nombre.trim()) errors.nombre = 'no debe estar vacío';
     return errors;
 };
 
-const FIELD_LABELS: Partial<Record<keyof DoctorRequest | '_server', string>> = {
+const FIELD_LABELS: Partial<Record<keyof DestinatarioRequest | '_server', string>> = {
     nombre: 'Nombre',
-    telefono: 'Teléfono',
     _server: 'Error',
 };
 
-const DoctorDialog = ({ open, onOpenChange, onCreado, doctor }: Props) => {
+const DestinatarioDialog = ({ open, onOpenChange, onCreado, destinatario }: Props) => {
     const queryClient = useQueryClient();
-    const [form, setForm] = useState<DoctorRequest>(EMPTY_FORM);
+    const [form, setForm] = useState<DestinatarioRequest>(EMPTY_FORM);
     const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-    const esEdicion = !!doctor;
+    const esEdicion = !!destinatario;
 
     useEffect(() => {
         if (open) {
-            setForm(doctor ? { idDoctor: doctor.idDoctor, nombre: doctor.nombre, telefono: doctor.telefono } : EMPTY_FORM);
+            setForm(destinatario ? { idDestinatario: destinatario.idDestinatario, nombre: destinatario.nombre } : EMPTY_FORM);
             setFieldErrors({});
         }
-    }, [open, doctor]);
+    }, [open, destinatario]);
 
     const mutation = useMutation({
-        mutationFn: (data: DoctorRequest) => esEdicion ? editarDoctor(data) : crearDoctor(data),
+        mutationFn: (data: DestinatarioRequest) => esEdicion ? editarDestinatario(data) : crearDestinatario(data),
         onSuccess: (res) => {
-            queryClient.invalidateQueries({ queryKey: ['doctores'] });
-            onCreado(res.data.data.idDoctor);
+            queryClient.invalidateQueries({ queryKey: ['destinatarios'] });
+            onCreado(res.data.data.idDestinatario);
             onOpenChange(false);
             setForm(EMPTY_FORM);
             setFieldErrors({});
@@ -66,25 +65,19 @@ const DoctorDialog = ({ open, onOpenChange, onCreado, doctor }: Props) => {
         mutation.mutate({ ...form, nombre: capitalizarPalabras(form.nombre) });
     };
 
-    const err = (field: keyof DoctorRequest) =>
+    const err = (field: keyof DestinatarioRequest) =>
         fieldErrors[field] ? 'border-red-500 focus-visible:ring-red-500' : '';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
-                <DialogHeader><DialogTitle>{esEdicion ? 'Editar doctor' : 'Nuevo doctor'}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{esEdicion ? 'Editar destinatario' : 'Nuevo destinatario'}</DialogTitle></DialogHeader>
                 <div className="space-y-4 py-2">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2 col-span-2">
                             <Label>Nombre*</Label>
                             <Input value={form.nombre} className={err('nombre')}
                                 onChange={e => setForm({ ...form, nombre: e.target.value })}
-                            />
-                        </div>
-                        <div className="space-y-2 col-span-2">
-                            <Label>Teléfono</Label>
-                            <Input value={form.telefono || ''}
-                                onChange={e => setForm({ ...form, telefono: e.target.value })}
                             />
                         </div>
                     </div>
@@ -108,4 +101,4 @@ const DoctorDialog = ({ open, onOpenChange, onCreado, doctor }: Props) => {
     );
 };
 
-export default DoctorDialog;
+export default DestinatarioDialog;

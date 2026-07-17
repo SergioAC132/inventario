@@ -5,9 +5,11 @@ import { registrarCompra } from '../api/compras';
 import { getProveedores } from '../api/proveedores';
 import { getProductos } from '../api/productos';
 import type { CompraProductoRequest, EstatusCompra } from '../types/compra';
+import type { ProveedorResponse } from '../types/proveedor';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
 import { Separator } from '../components/ui/separator';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
@@ -17,7 +19,7 @@ import {
 } from '../components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '../components/ui/command';
-import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronLeft, ChevronsUpDown, Check, Pencil } from 'lucide-react';
 import ProveedorDialog from '../components/ProveedorDialog';
 import ProductoDialog from '../components/ProductoDialog';
 import MarcaDialog from '../components/MarcaDialog';
@@ -41,6 +43,7 @@ const RegistrarCompra = () => {
     const [numeroFactura, setNumeroFactura] = useState('');
     const [estatus, setEstatus] = useState<EstatusCompra>('REGISTRADA');
     const [productos, setProductos] = useState<CompraProductoRequest[]>([{ ...EMPTY_PRODUCTO_ROW }]);
+    const [nota, setNota] = useState('');
     const [error, setError] = useState('');
     const [rowErrors, setRowErrors] = useState<Record<number, Set<string>>>({});
 
@@ -53,6 +56,7 @@ const RegistrarCompra = () => {
 
     // Dialogs
     const [proveedorDialogOpen, setProveedorDialogOpen] = useState(false);
+    const [proveedorEditar, setProveedorEditar] = useState<ProveedorResponse | null>(null);
     const [productoDialogOpen, setProductoDialogOpen] = useState(false);
     const [productoRowIndex, setProductoRowIndex] = useState<number>(0);
     const [marcaDialogOpen, setMarcaDialogOpen] = useState(false);
@@ -125,7 +129,7 @@ const RegistrarCompra = () => {
         }
         setRowErrors({});
         setError('');
-        registrarMutation.mutate({ proveedorId, fecha, numeroFactura, estatus, productos });
+        registrarMutation.mutate({ proveedorId, fecha, numeroFactura, estatus, productos, nota: nota || undefined });
     };
 
     const proveedorSeleccionado = proveedoresData?.find(p => p.idProveedor === proveedorId);
@@ -178,8 +182,12 @@ const RegistrarCompra = () => {
                                     </Command>
                                 </PopoverContent>
                             </Popover>
-                            <Button variant="outline" size="icon" onClick={() => setProveedorDialogOpen(true)}>
+                            <Button variant="outline" size="icon" onClick={() => { setProveedorEditar(null); setProveedorDialogOpen(true); }}>
                                 <Plus size={16} />
+                            </Button>
+                            <Button variant="outline" size="icon" disabled={!proveedorSeleccionado}
+                                onClick={() => { setProveedorEditar(proveedorSeleccionado ?? null); setProveedorDialogOpen(true); }}>
+                                <Pencil size={16} />
                             </Button>
                         </div>
                     </div>
@@ -322,6 +330,13 @@ const RegistrarCompra = () => {
 
                 <Separator />
 
+                <div className="space-y-2">
+                    <Label>Nota (opcional)</Label>
+                    <Textarea value={nota} onChange={e => setNota(e.target.value)} placeholder="Agregar una nota..." />
+                </div>
+
+                <Separator />
+
                 {/* Total y acciones */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
@@ -351,6 +366,7 @@ const RegistrarCompra = () => {
                 open={proveedorDialogOpen}
                 onOpenChange={setProveedorDialogOpen}
                 onCreado={setProveedorId}
+                proveedor={proveedorEditar}
             />
 
             <ProductoDialog

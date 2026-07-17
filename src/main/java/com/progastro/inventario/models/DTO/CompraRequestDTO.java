@@ -31,4 +31,6 @@ public class CompraRequestDTO {
     private List<CompraProductoRequestDTO> productos;
 
     private EstatusCompra estatus = EstatusCompra.REGISTRADA;
+
+    private String nota;
 }

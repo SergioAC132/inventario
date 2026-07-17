@@ -1,23 +1,24 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { getSalidas } from '../api/salidas';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getSalidas, devolverProductoSalida, eliminarSalida } from '../api/salidas';
 import type { SalidaResponse } from '../types/salida';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
+import { Label } from '../components/ui/label';
 import { usePermisos } from '../hooks/usePermisos';
 import { Separator } from '../components/ui/separator';
 import {
     Table, TableBody, TableCell, TableHead, TableHeader, TableRow
 } from '../components/ui/table';
 import {
-    Dialog, DialogContent, DialogHeader, DialogTitle
+    Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
 } from '../components/ui/dialog';
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue
 } from '../components/ui/select';
-import { Plus, Eye, Pencil, X } from 'lucide-react';
+import { Plus, Eye, Pencil, X, Undo2, Trash2 } from 'lucide-react';
 import { formatearFecha } from '../lib/utils';
 
 const tipoBadge = (tipo: string) => {
@@ -31,6 +32,7 @@ const tipoBadge = (tipo: string) => {
 
 const Salidas = () => {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
 
     const [page, setPage] = useState(0);
     const [filtroProducto, setFiltroProducto] = useState('');
@@ -38,18 +40,27 @@ const Salidas = () => {
     const [filtroDestino, setFiltroDestino] = useState('');
     const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
     const [filtroFechaFin, setFiltroFechaFin] = useState('');
+    const [filtroIdentificador, setFiltroIdentificador] = useState('');
     const [detalleOpen, setDetalleOpen] = useState(false);
     const [salidaSeleccionada, setSalidaSeleccionada] = useState<SalidaResponse | null>(null);
-    const { puedeRegistrar, puedeEditar } = usePermisos();
+    const [eliminarDialogOpen, setEliminarDialogOpen] = useState(false);
+    const [confirmoEliminar, setConfirmoEliminar] = useState(false);
+    const [passwordEliminar, setPasswordEliminar] = useState('');
+    const [errorEliminar, setErrorEliminar] = useState('');
+    const { puedeRegistrar, puedeEditar, puedeEliminarSalida } = usePermisos();
+
+    const identificadorEsFolio = filtroIdentificador !== '' && !isNaN(Number(filtroIdentificador));
 
     const { data: salidasData, isLoading } = useQuery({
-        queryKey: ['salidas', page, filtroProducto, filtroTipo, filtroDestino, filtroFechaInicio, filtroFechaFin],
+        queryKey: ['salidas', page, filtroProducto, filtroTipo, filtroDestino, filtroFechaInicio, filtroFechaFin, filtroIdentificador],
         queryFn: () => getSalidas({
             producto: filtroProducto || undefined,
             tipo: filtroTipo || undefined,
             destino: filtroDestino || undefined,
             fechaInicio: filtroFechaInicio || undefined,
             fechaFin: filtroFechaFin || undefined,
+            folio: identificadorEsFolio ? Number(filtroIdentificador) : undefined,
+            destinatario: filtroIdentificador && !identificadorEsFolio ? filtroIdentificador : undefined,
             page,
             size: 20
         }).then(r => r.data)
@@ -58,6 +69,48 @@ const Salidas = () => {
     const abrirDetalle = (salida: SalidaResponse) => {
         setSalidaSeleccionada(salida);
         setDetalleOpen(true);
+    };
+
+    const devolucionMutation = useMutation({
+        mutationFn: devolverProductoSalida,
+        onSuccess: (response) => {
+            setSalidaSeleccionada(response.data.data);
+            queryClient.invalidateQueries({ queryKey: ['salidas'] });
+        }
+    });
+
+    const devolverProducto = (idSalidaProducto: number) => {
+        if (!window.confirm('¿Devolver este producto al inventario? Esta acción lo quitará de la salida.')) return;
+        devolucionMutation.mutate(idSalidaProducto);
+    };
+
+    const abrirEliminarDialog = () => {
+        setConfirmoEliminar(false);
+        setPasswordEliminar('');
+        setErrorEliminar('');
+        setEliminarDialogOpen(true);
+    };
+
+    const eliminarMutation = useMutation({
+        mutationFn: () => eliminarSalida(salidaSeleccionada!.idSalida, passwordEliminar),
+        onSuccess: () => {
+            // El filtro (folio/destinatario) usado para localizar la salida eliminada
+            // ya no coincide con ningún registro; se limpia junto con la página
+            // para que la lista completa vuelva a mostrarse sin necesidad de recargar.
+            setFiltroIdentificador('');
+            setPage(0);
+            queryClient.invalidateQueries({ queryKey: ['salidas'] });
+            setEliminarDialogOpen(false);
+            setDetalleOpen(false);
+        },
+        onError: (e: any) => setErrorEliminar(e.response?.data?.message || 'Ocurrió un error')
+    });
+
+    const confirmarEliminar = () => {
+        if (!confirmoEliminar) { setErrorEliminar('Debes confirmar la eliminación'); return; }
+        if (!passwordEliminar) { setErrorEliminar('Ingresa tu contraseña'); return; }
+        setErrorEliminar('');
+        eliminarMutation.mutate();
     };
 
     return (
@@ -118,6 +171,22 @@ const Salidas = () => {
                 <Input type="date" value={filtroFechaFin}
                     onChange={e => { setFiltroFechaFin(e.target.value); setPage(0); }}
                     className="w-40" />
+                <div className="relative w-full sm:w-56">
+                    <Input
+                        placeholder="Folio o destinatario..."
+                        value={filtroIdentificador}
+                        onChange={e => { setFiltroIdentificador(e.target.value); setPage(0); }}
+                        className="pr-8"
+                    />
+                    {filtroIdentificador && (
+                        <button
+                            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                            onClick={() => { setFiltroIdentificador(''); setPage(0); }}
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* Tabla */}
@@ -128,6 +197,7 @@ const Salidas = () => {
                             <TableHead>Fecha</TableHead>
                             <TableHead>Tipo</TableHead>
                             <TableHead>Destino</TableHead>
+                            <TableHead>Folio/Destinatario</TableHead>
                             <TableHead>Total</TableHead>
                             <TableHead className="text-right">Acciones</TableHead>
                         </TableRow>
@@ -135,11 +205,11 @@ const Salidas = () => {
                     <TableBody>
                         {isLoading ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-gray-400 py-8">Cargando...</TableCell>
+                                <TableCell colSpan={6} className="text-center text-gray-400 py-8">Cargando...</TableCell>
                             </TableRow>
                         ) : salidasData?.content.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-gray-400 py-8">No se encontraron salidas</TableCell>
+                                <TableCell colSpan={6} className="text-center text-gray-400 py-8">No se encontraron salidas</TableCell>
                             </TableRow>
                         ) : salidasData?.content.map(salida => (
                             <TableRow key={salida.idSalida}>
@@ -148,6 +218,7 @@ const Salidas = () => {
                                     <Badge className={tipoBadge(salida.tipo)}>{salida.tipo}</Badge>
                                 </TableCell>
                                 <TableCell>{salida.destino}</TableCell>
+                                <TableCell>{salida.folio ?? salida.destinatario ?? '-'}</TableCell>
                                 <TableCell>${salida.total?.toFixed(2) ?? '0.00'}</TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex justify-end gap-1">
@@ -197,6 +268,18 @@ const Salidas = () => {
                                     <p className="text-gray-500">Destino</p>
                                     <p className="font-medium">{salidaSeleccionada.destino}</p>
                                 </div>
+                                {salidaSeleccionada.folio != null && (
+                                    <div>
+                                        <p className="text-gray-500">Folio</p>
+                                        <p className="font-medium">{salidaSeleccionada.folio}</p>
+                                    </div>
+                                )}
+                                {salidaSeleccionada.destinatario && (
+                                    <div>
+                                        <p className="text-gray-500">Destinatario</p>
+                                        <p className="font-medium">{salidaSeleccionada.destinatario}</p>
+                                    </div>
+                                )}
                                 <div>
                                     <p className="text-gray-500">Total (IVA 16%)</p>
                                     <p className="font-medium">${salidaSeleccionada.total?.toFixed(2) ?? '0.00'}</p>
@@ -217,6 +300,7 @@ const Salidas = () => {
                                         <TableHead>Restante</TableHead>
                                         <TableHead>Total venta</TableHead>
                                         <TableHead>Utilidad</TableHead>
+                                        <TableHead className="text-right">Acciones</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -238,12 +322,56 @@ const Salidas = () => {
                                                         ? <span className={utilidad >= 0 ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>${utilidad.toFixed(2)}</span>
                                                         : <span className="text-gray-400">-</span>}
                                                 </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        title="Devolver al inventario"
+                                                        disabled={devolucionMutation.isPending}
+                                                        onClick={() => devolverProducto(p.idSalidaProducto)}
+                                                    >
+                                                        <Undo2 size={16} />
+                                                    </Button>
+                                                </TableCell>
                                             </TableRow>
                                         );
                                     })}
                                 </TableBody>
                             </Table>
                             </div>
+
+                            {salidaSeleccionada.productos.length === 0 && (
+                                <div className="flex items-center justify-between bg-red-50 border border-red-200 rounded-md p-3">
+                                    <p className="text-sm text-red-600">
+                                        Esta salida se quedó sin productos.
+                                        {puedeEliminarSalida ? ' Puede eliminarse.' : ' Sólo un administrador puede eliminarla.'}
+                                    </p>
+                                    {puedeEliminarSalida && (
+                                        <Button variant="destructive" size="sm" className="gap-2" onClick={abrirEliminarDialog}>
+                                            <Trash2 size={14} />
+                                            Eliminar salida
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            {salidaSeleccionada.notas && salidaSeleccionada.notas.length > 0 && (
+                                <>
+                                    <Separator />
+                                    <div className="space-y-2">
+                                        <h3 className="text-sm font-medium text-gray-700">Notas</h3>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                                            {salidaSeleccionada.notas.map(n => (
+                                                <div key={n.idNota} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                                                    <p className="text-gray-700">{n.texto}</p>
+                                                    <p className="text-xs text-gray-400">{n.usuario} · {new Date(n.fecha).toLocaleString()}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
                             {(() => {
                                 const subtotal = salidaSeleccionada.productos.reduce((acc, p) => acc + (p.costoTotal ?? 0), 0);
                                 const utilidadTotal = salidaSeleccionada.productos.reduce((acc, p) => {
@@ -271,6 +399,45 @@ const Salidas = () => {
                             })()}
                         </div>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Doble autorización para eliminar salida vacía */}
+            <Dialog open={eliminarDialogOpen} onOpenChange={setEliminarDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Eliminar salida</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                        <p className="text-sm text-gray-600">
+                            Esta acción eliminará la salida de forma permanente. Requiere doble autorización.
+                        </p>
+                        <label className="flex items-start gap-2 text-sm text-gray-700">
+                            <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={confirmoEliminar}
+                                onChange={e => setConfirmoEliminar(e.target.checked)}
+                            />
+                            Confirmo que deseo eliminar esta salida permanentemente
+                        </label>
+                        <div className="space-y-2">
+                            <Label>Contraseña de administrador</Label>
+                            <Input
+                                type="password"
+                                value={passwordEliminar}
+                                onChange={e => setPasswordEliminar(e.target.value)}
+                                placeholder="Ingresa tu contraseña"
+                            />
+                        </div>
+                        {errorEliminar && <p className="text-sm text-red-500">{errorEliminar}</p>}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setEliminarDialogOpen(false)}>Cancelar</Button>
+                        <Button variant="destructive" disabled={eliminarMutation.isPending} onClick={confirmarEliminar}>
+                            {eliminarMutation.isPending ? 'Eliminando...' : 'Eliminar definitivamente'}
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

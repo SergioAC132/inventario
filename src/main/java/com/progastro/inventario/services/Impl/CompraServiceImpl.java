@@ -3,6 +3,7 @@ package com.progastro.inventario.services.Impl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,11 +26,13 @@ import com.progastro.inventario.models.Entities.Compra;
 import com.progastro.inventario.models.Entities.CompraProductos;
 import com.progastro.inventario.models.Entities.Doctor;
 import com.progastro.inventario.models.Entities.Inventario;
+import com.progastro.inventario.models.Entities.Nota;
 import com.progastro.inventario.models.Entities.Proveedor;
 import com.progastro.inventario.models.Enums.EstatusCompra;
 import com.progastro.inventario.repositories.CompraProductosRepository;
 import com.progastro.inventario.repositories.CompraRepository;
 import com.progastro.inventario.repositories.DoctorRepository;
+import com.progastro.inventario.repositories.NotaRepository;
 import com.progastro.inventario.repositories.ProveedorRepository;
 import com.progastro.inventario.services.CompraServiceBridge;
 import com.progastro.inventario.services.InventarioServiceBridge;
@@ -47,9 +50,21 @@ public class CompraServiceImpl implements CompraServiceBridge {
     private final CompraRepository compraRepository;
     private final DoctorRepository doctorRepository;
     private final LoginService loginService;
+    private final NotaRepository notaRepository;
     private final ProveedorRepository proveedorRepository;
     private final InventarioServiceBridge inventarioService;
     private final CompraMapper compraMapper;
+
+    private void registrarNotaSiAplica(Compra compra, String texto) {
+        if (texto == null || texto.isBlank()) return;
+
+        Nota nota = new Nota();
+        nota.setCompra(compra);
+        nota.setFecha(new Date());
+        nota.setTexto(texto);
+        nota.setUsuario(loginService.getUsuarioActual());
+        notaRepository.save(nota);
+    }
 
     @Override
     @Transactional
@@ -105,8 +120,9 @@ public class CompraServiceImpl implements CompraServiceBridge {
         compra.setProductos(listaProductos);
         compraRepository.save(compra);
         listaProductos.forEach(lp -> compraProductosRepository.save(lp));
+        registrarNotaSiAplica(compra, request.getNota());
 
-        return compraMapper.toResponse(compra);
+        return compraMapper.toResponse(compra, notaRepository.findByCompraOrderByFechaAsc(compra));
     }
 
     private Proveedor validarDatosProveedor(Long proveedorId, String numeroFactura, Long idCompra) {
@@ -150,8 +166,8 @@ public class CompraServiceImpl implements CompraServiceBridge {
         Page<Compra> compras = compraRepository.findByFiltros(proveedor, estatus, fechaInicio, fechaFin, pageable);
 
         compras.forEach(c -> c.setProductos(compraProductosRepository.findByCompra(c)));
-        
-        return compras.map(compraMapper::toResponse);
+
+        return compras.map(c -> compraMapper.toResponse(c, notaRepository.findByCompraOrderByFechaAsc(c)));
     }
 
     @Override
@@ -227,7 +243,8 @@ public class CompraServiceImpl implements CompraServiceBridge {
 
         compra.setTotal(totalCompra);
         compraRepository.save(compra);
-        return compraMapper.toResponse(compra);
+        registrarNotaSiAplica(compra, request.getNota());
+        return compraMapper.toResponse(compra, notaRepository.findByCompraOrderByFechaAsc(compra));
     }
 
     private String generarKey(Inventario inv) {

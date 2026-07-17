@@ -18,6 +18,9 @@ public class SalidaResponseDTO {
     private LocalDate fecha;
     private String tipo;
     private String destino;
+    private Long folio;
+    private String destinatario;
     private BigDecimal total;
     private List<SalidaProductoResponseDTO> productos;
+    private List<NotaResponseDTO> notas;
 }

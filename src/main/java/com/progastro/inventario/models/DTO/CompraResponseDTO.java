@@ -24,4 +24,5 @@ public class CompraResponseDTO {
     private EstatusCompra estatus;
     private BigDecimal total;
     private List<CompraProductoReponseDTO> productos;
+    private List<NotaResponseDTO> notas;
 }

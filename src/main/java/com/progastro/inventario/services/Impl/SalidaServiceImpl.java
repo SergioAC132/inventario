@@ -3,6 +3,7 @@ package com.progastro.inventario.services.Impl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +23,17 @@ import com.progastro.inventario.mappers.SalidaMapper;
 import com.progastro.inventario.models.DTO.SalidaProductoRequestDTO;
 import com.progastro.inventario.models.DTO.SalidaRequestDTO;
 import com.progastro.inventario.models.DTO.SalidaResponseDTO;
+import com.progastro.inventario.models.Entities.Destinatario;
 import com.progastro.inventario.models.Entities.Inventario;
+import com.progastro.inventario.models.Entities.Nota;
 import com.progastro.inventario.models.Entities.Salida;
 import com.progastro.inventario.models.Entities.SalidaProductos;
+import com.progastro.inventario.models.Entities.Usuario;
 import com.progastro.inventario.models.Enums.DestinoSalida;
 import com.progastro.inventario.models.Enums.TipoSalida;
+import com.progastro.inventario.repositories.DestinatarioRepository;
 import com.progastro.inventario.repositories.InventarioRepository;
+import com.progastro.inventario.repositories.NotaRepository;
 import com.progastro.inventario.repositories.SalidaProductosRepository;
 import com.progastro.inventario.repositories.SalidaRepository;
 import com.progastro.inventario.services.InventarioServiceBridge;
@@ -39,12 +46,43 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SalidaServiceImpl implements SalidaServiceBridge {
     
+    private final DestinatarioRepository destinatarioRepository;
     private final InventarioRepository inventarioRepository;
     private final InventarioServiceBridge inventarioService;
     private final LoginService loginService;
+    private final NotaRepository notaRepository;
+    private final PasswordEncoder passwordEncoder;
     private final SalidaMapper salidaMapper;
     private final SalidaRepository salidaRepository;
     private final SalidaProductosRepository salidaProductosRepository;
+
+    private Destinatario validarFolioDestinatario(SalidaRequestDTO request) {
+        boolean tieneFolio = request.getFolio() != null;
+        boolean tieneDestinatario = request.getDestinatarioId() != null;
+
+        if (tieneFolio && tieneDestinatario) {
+            throw new ValidationException("Sólo se puede indicar folio o destinatario, no ambos");
+        }
+
+        if (tieneDestinatario) {
+            return destinatarioRepository.findById(request.getDestinatarioId()).orElseThrow(() ->
+                new ResourceNotFoundException("Destinatario no encontrado con id " + request.getDestinatarioId())
+            );
+        }
+
+        return null;
+    }
+
+    private void registrarNotaSiAplica(Salida salida, String texto) {
+        if (texto == null || texto.isBlank()) return;
+
+        Nota nota = new Nota();
+        nota.setSalida(salida);
+        nota.setFecha(new Date());
+        nota.setTexto(texto);
+        nota.setUsuario(loginService.getUsuarioActual());
+        notaRepository.save(nota);
+    }
 
     @Override
     @Transactional
@@ -52,11 +90,14 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         List<SalidaProductos> listaProductos = new ArrayList<>();
     
         validarCreacion(request.getProductos());
-        
+        Destinatario destinatario = validarFolioDestinatario(request);
+
         Salida salida = new Salida();
         salida.setFecha(request.getFecha());
         salida.setTipo(request.getTipo());
         salida.setDestino(request.getDestino());
+        salida.setFolio(request.getFolio());
+        salida.setDestinatario(destinatario);
 
         BigDecimal totalSalida = request.getProductos()
                     .stream()
@@ -83,8 +124,9 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         salida.setProductos(listaProductos);
         salidaRepository.save(salida);
         listaProductos.forEach(lp -> salidaProductosRepository.save(lp));
+        registrarNotaSiAplica(salida, request.getNota());
 
-        return salidaMapper.toResponse(salida);
+        return salidaMapper.toResponse(salida, notaRepository.findBySalidaOrderByFechaAsc(salida));
     }
 
     private void validarCreacion(List<SalidaProductoRequestDTO> productos) {
@@ -136,7 +178,8 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
     @Override
     @Transactional(readOnly = true)
     public Page<SalidaResponseDTO> listarSalidas(String nombreProducto, String destino, String tipo,
-                                                    LocalDate fechaInicio, LocalDate fechaFin, int page, int size) {
+                                                    LocalDate fechaInicio, LocalDate fechaFin, Long folio,
+                                                    String destinatario, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("fecha").descending());
 
         DestinoSalida destinoEnum = (destino != null && !destino.isBlank())
@@ -145,13 +188,15 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         TipoSalida tipoEnum = (tipo != null && !tipo.isBlank())
             ? TipoSalida.valueOf(tipo.toUpperCase()) : null;
 
-        Page<Salida> salidas = salidaRepository.findByFiltros(nombreProducto, destinoEnum, tipoEnum, fechaInicio, fechaFin, pageable);
-        return salidas.map(salidaMapper::toResponse);
+        Page<Salida> salidas = salidaRepository.findByFiltros(nombreProducto, destinoEnum, tipoEnum, fechaInicio, fechaFin, folio, destinatario, pageable);
+        return salidas.map(s -> salidaMapper.toResponse(s, notaRepository.findBySalidaOrderByFechaAsc(s)));
     }
 
     @Override
     @Transactional
     public SalidaResponseDTO editarSalida(SalidaRequestDTO request) {
+
+        Destinatario destinatario = validarFolioDestinatario(request);
 
         Salida salida = salidaRepository.findById(request.getIdSalida())
             .orElseThrow(() -> new ResourceNotFoundException("Salida no encontrada"));
@@ -159,6 +204,8 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         salida.setFecha(request.getFecha());
         salida.setTipo(request.getTipo());
         salida.setDestino(request.getDestino());
+        salida.setFolio(request.getFolio());
+        salida.setDestinatario(destinatario);
 
         validarEdicion(request.getProductos(), salida.getProductos());
 
@@ -247,6 +294,52 @@ public class SalidaServiceImpl implements SalidaServiceBridge {
         salida.setTotal(totalSalida);
 
         salidaRepository.save(salida);
-        return salidaMapper.toResponse(salida);
+        registrarNotaSiAplica(salida, request.getNota());
+        return salidaMapper.toResponse(salida, notaRepository.findBySalidaOrderByFechaAsc(salida));
+    }
+
+    @Override
+    @Transactional
+    public SalidaResponseDTO devolverProducto(Long idSalidaProducto) {
+        SalidaProductos sp = salidaProductosRepository.findById(idSalidaProducto)
+            .orElseThrow(() -> new ResourceNotFoundException("Producto de salida no encontrado con id " + idSalidaProducto));
+
+        Salida salida = sp.getSalida();
+
+        inventarioService.revertirSalida(sp);
+
+        salida.getProductos().removeIf(p -> p.getIdSalidaProducto().equals(idSalidaProducto));
+
+        BigDecimal totalSalida = salida.getProductos().stream()
+            .map(SalidaProductos::getCostoTotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        salida.setTotal(totalSalida);
+
+        salidaRepository.save(salida);
+        return salidaMapper.toResponse(salida, notaRepository.findBySalidaOrderByFechaAsc(salida));
+    }
+
+    @Override
+    @Transactional
+    public void eliminarSalida(Long idSalida, String password) {
+        Usuario usuario = loginService.getUsuarioActual();
+
+        if (!"ADMIN".equals(usuario.getRol().getNombre())) {
+            throw new ValidationException("Sólo un administrador puede eliminar una salida");
+        }
+
+        if (!passwordEncoder.matches(password, usuario.getPassword())) {
+            throw new ValidationException("Contraseña incorrecta");
+        }
+
+        Salida salida = salidaRepository.findById(idSalida)
+            .orElseThrow(() -> new ResourceNotFoundException("Salida no encontrada"));
+
+        if (!salida.getProductos().isEmpty()) {
+            throw new ValidationException("Sólo se puede eliminar una salida que no tenga productos");
+        }
+
+        notaRepository.deleteAll(notaRepository.findBySalidaOrderByFechaAsc(salida));
+        salidaRepository.delete(salida);
     }
 }

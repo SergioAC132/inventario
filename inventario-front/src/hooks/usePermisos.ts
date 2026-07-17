@@ -8,6 +8,7 @@ export const usePermisos = () => {
         puedeRegistrar: ['ADMIN', 'EDITOR', 'CAPTURISTA'].includes(rol || ''),
         puedeEditar: ['ADMIN', 'EDITOR'].includes(rol || ''),
         puedeCancelar: rol === 'ADMIN',
+        puedeEliminarSalida: rol === 'ADMIN',
         puedeGestionarUsuarios: rol === 'ADMIN',
     };
 };

@@ -1,3 +1,5 @@
+import type { NotaResponse } from './nota';
+
 export type EstatusCompra = 'REGISTRADA' | 'FACTURADA' | 'CANCELADA';
 
 export interface CompraProductoRequest {
@@ -28,6 +30,7 @@ export interface CompraRequest {
     numeroFactura?: string;
     productos: CompraProductoRequest[];
     estatus: EstatusCompra;
+    nota?: string;
 }
 
 export interface CompraResponse {
@@ -39,4 +42,5 @@ export interface CompraResponse {
     estatus: EstatusCompra;
     total: number;
     productos: CompraProductoResponse[];
+    notas: NotaResponse[];
 }

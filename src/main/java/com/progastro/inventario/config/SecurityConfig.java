@@ -3,12 +3,18 @@ package com.progastro.inventario.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -16,26 +22,31 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final UserDetailsService userDetailsService;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
-            .httpBasic(basic -> basic
-            .authenticationEntryPoint((request, response, authException) -> {
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .exceptionHandling(exception -> exception
+                .authenticationEntryPoint((request, response, authException) -> {
                     response.setContentType("application/json");
                     response.setStatus(401);
                     response.getWriter().write("{\"success\":false,\"message\":\"No autorizado\",\"data\":null}");
                 })
-            )      
+            )
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/index.html", "/assets/**", "/*.js", "/*.css", "/*.ico", "/*.png", "/*.svg", "/*.webp").permitAll()
+                .requestMatchers("/api/auth/login").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
 
                 // Solo ADMIN
-                .requestMatchers(HttpMethod.GET, "/api/usuarios/me").authenticated()
                 .requestMatchers(HttpMethod.PATCH, "/api/compras/*/cancelar").hasRole("ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/salidas/eliminar-salida/*").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.GET, "/api/roles/**").hasRole("ADMIN")
                 .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
 
@@ -44,7 +55,9 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/salidas/editar-salida").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.POST, "/api/productos/editar-producto").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.POST, "/api/marcas/editar-marca").hasAnyRole("ADMIN", "EDITOR")
-                .requestMatchers(HttpMethod.POST, "/api/proveedores/editar-proveedor/*").hasAnyRole("ADMIN", "EDITOR")
+                .requestMatchers(HttpMethod.POST, "/api/proveedores/editar-proveedor").hasAnyRole("ADMIN", "EDITOR")
+                .requestMatchers(HttpMethod.POST, "/api/doctores/editar-doctor").hasAnyRole("ADMIN", "EDITOR")
+                .requestMatchers(HttpMethod.POST, "/api/destinatarios/editar-destinatario").hasAnyRole("ADMIN", "EDITOR")
                 .requestMatchers(HttpMethod.PATCH, "/api/inventarios/*/*").hasAnyRole("ADMIN", "EDITOR")
 
                 // ADMIN, EDITOR y CAPTURISTA pueden registrar
@@ -54,16 +67,28 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/marcas/registrar-marca").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
                 .requestMatchers(HttpMethod.POST, "/api/marcas/registrar-proveedor").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
                 .requestMatchers(HttpMethod.POST, "/api/doctores/registrar-doctor").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
+                .requestMatchers(HttpMethod.POST, "/api/destinatarios/registrar-destinatario").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA")
 
                 // Todos los roles pueden consultar
                 .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "EDITOR", "CAPTURISTA", "VISOR")
 
                 .anyRequest().authenticated()
             )
-            .httpBasic(Customizer.withDefaults())
-            .logout(logout -> logout.permitAll());
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
 
     @Bean

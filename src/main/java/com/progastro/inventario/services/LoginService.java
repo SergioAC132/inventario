@@ -18,16 +18,19 @@ public class LoginService {
     private final UsuarioRepository usuarioRepository;
 
     public void settearUsuario() {
+        Usuario usuario = getUsuarioActual();
+
+        jdbcTemplate.update("SET @usuario_id = ?", usuario.getIdUsuario());
+
+    }
+
+    public Usuario getUsuarioActual() {
         Authentication auth = SecurityContextHolder
                 .getContext()
                 .getAuthentication();
 
         String username = auth.getName();
 
-        Usuario usuario = usuarioRepository.findByUsername(username).orElseThrow();
-
-        
-        jdbcTemplate.update("SET @usuario_id = ?", usuario.getIdUsuario());
-    
+        return usuarioRepository.findByUsername(username).orElseThrow();
     }
 }

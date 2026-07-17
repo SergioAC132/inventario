@@ -10,3 +10,6 @@ export const getDoctores = (params?: {
 
 export const crearDoctor = (data: DoctorRequest) =>
     client.post<ApiResponse<DoctorResponse>>('/doctores/registrar-doctor', data);
+
+export const editarDoctor = (data: DoctorRequest) =>
+    client.post<ApiResponse<DoctorResponse>>('/doctores/editar-doctor', data);

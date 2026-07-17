@@ -6,18 +6,28 @@ import org.springframework.stereotype.Component;
 
 import com.progastro.inventario.models.DTO.CompraProductoReponseDTO;
 import com.progastro.inventario.models.DTO.CompraResponseDTO;
+import com.progastro.inventario.models.DTO.NotaResponseDTO;
 import com.progastro.inventario.models.Entities.Compra;
 import com.progastro.inventario.models.Entities.CompraProductos;
+import com.progastro.inventario.models.Entities.Nota;
 
 @Component
 public class CompraMapper {
-    
-    public CompraResponseDTO toResponse(Compra compra) {
+
+    private final NotaMapper notaMapper;
+
+    public CompraMapper(NotaMapper notaMapper) {
+        this.notaMapper = notaMapper;
+    }
+
+    public CompraResponseDTO toResponse(Compra compra, List<Nota> notas) {
 
         List<CompraProductoReponseDTO> productos = compra.getProductos()
                                                         .stream()
                                                         .map(this::mapProducto)
                                                         .toList();
+
+        List<NotaResponseDTO> notasResponse = notas != null ? notaMapper.toResponseList(notas) : List.of();
 
         return new CompraResponseDTO(
             compra.getIdCompra(),
@@ -27,7 +37,8 @@ public class CompraMapper {
             compra.getNumeroFactura(),
             compra.getEstatus(),
             compra.getTotal(),
-            productos
+            productos,
+            notasResponse
         );
     }
 

@@ -33,18 +33,18 @@ public class Nota {
     @Column(name = "id_nota")
     private Long idNota;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(
         name = "id_compra",
-        nullable= false,
+        nullable= true,
         foreignKey=@ForeignKey(name = "fk_nota_compra_compra")
     )
     private Compra compra;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(
         name = "id_salida",
-        nullable= false,
+        nullable= true,
         foreignKey=@ForeignKey(name = "fk_nota_salida")
     )
     private Salida salida;

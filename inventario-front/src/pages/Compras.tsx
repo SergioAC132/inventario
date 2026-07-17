@@ -243,6 +243,23 @@ const Compras = () => {
                             </Table>
                             </div>
 
+                            {compraSeleccionada.notas && compraSeleccionada.notas.length > 0 && (
+                                <>
+                                    <Separator />
+                                    <div className="space-y-2">
+                                        <h3 className="text-sm font-medium text-gray-700">Notas</h3>
+                                        <div className="space-y-2 max-h-48 overflow-y-auto border rounded-md p-3 bg-gray-50">
+                                            {compraSeleccionada.notas.map(n => (
+                                                <div key={n.idNota} className="text-sm border-b last:border-0 pb-2 last:pb-0">
+                                                    <p className="text-gray-700">{n.texto}</p>
+                                                    <p className="text-xs text-gray-400">{n.usuario} · {new Date(n.fecha).toLocaleString()}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
                             <Separator />
 
                             <div className="flex items-center justify-between">
